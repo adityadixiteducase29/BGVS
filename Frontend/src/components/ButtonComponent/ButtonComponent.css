@@ -1,0 +1,184 @@
+/* ButtonComponent.css - Custom button styles */
+
+.custom-button {
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  padding: 10px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  font-family: 'Poppins', sans-serif;
+  letter-spacing: 0.025em;
+  transition: all 0.2s ease;
+  border: none;
+  outline: none;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+/* Size variants */
+.custom-button.button-sm {
+  padding: 6px 16px;
+  font-size: 12px;
+  min-height: 32px;
+}
+
+.custom-button.button-lg {
+  padding: 12px 24px;
+  font-size: 16px;
+  min-height: 48px;
+}
+
+/* Primary variant */
+.custom-button.button-primary {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.custom-button.button-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.custom-button.button-primary:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 55, 139, 0.2);
+}
+
+.custom-button.button-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Secondary variant */
+.custom-button.button-secondary {
+  background-color: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+}
+
+.custom-button.button-secondary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Success variant */
+.custom-button.button-success {
+  background-color: #10B981;
+  color: #FFFFFF;
+}
+
+.custom-button.button-success:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Danger variant */
+.custom-button.button-danger {
+  background-color: #EF4444;
+  color: #FFFFFF;
+}
+
+.custom-button.button-danger:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Warning variant */
+.custom-button.button-warning {
+  background-color: #F59E0B;
+  color: #FFFFFF;
+}
+
+.custom-button.button-warning:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Info variant */
+.custom-button.button-info {
+  background-color: #3B82F6;
+  color: #FFFFFF;
+}
+
+.custom-button.button-info:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Light variant */
+.custom-button.button-light {
+  background-color: #F3F4F6;
+  color: #374151;
+}
+
+.custom-button.button-light:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark variant */
+.custom-button.button-dark {
+  background-color: #111827;
+  color: #FFFFFF;
+}
+
+.custom-button.button-dark:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Outline variant */
+.custom-button.button-outline {
+  background-color: transparent;
+  color: hsl(var(--primary));
+  border: 2px solid hsl(var(--primary));
+}
+
+.custom-button.button-outline:hover {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Disabled state */
+.custom-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.custom-button:disabled:hover {
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Focus state for all variants */
+.custom-button:focus {
+  outline: none;
+}
+
+/* Active state for all variants */
+.custom-button:active {
+  transform: translateY(0);
+}
+
+/* Hover state for all variants (fallback) */
+.custom-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}

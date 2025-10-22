@@ -1,0 +1,344 @@
+/* Datatable.css - Styling based on Figma design */
+
+.datatable-container {
+  border-radius: 12px;
+  background: #fff;
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+  max-width: 1125px;
+  min-height: 400px;
+  max-height: 600px;
+  overflow: visible;
+}
+
+/* DataGrid Styling */
+.datatable-grid {
+  border: 1px solid #E4E4E4 !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  max-height: 500px !important;
+  overflow: auto !important;
+  --DataGrid-rowBorderColor: transparent !important;
+}
+
+/* Remove column separators */
+.datatable-grid .MuiDataGrid-columnSeparator {
+  display: none !important;
+}
+
+.datatable-grid .MuiDataGrid-columnHeader .MuiDataGrid-columnSeparator {
+  display: none !important;
+}
+
+.datatable-grid .MuiDataGrid-cell .MuiDataGrid-columnSeparator {
+  display: none !important;
+}
+
+/* Column Headers */
+.datatable-grid .MuiDataGrid-columnHeaders {
+  background: #fff !important;
+  border-bottom: none !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  font-family: 'Inter', sans-serif !important;
+  color: #534D59 !important;
+  min-height: 61px !important;
+  max-height: 61px !important;
+}
+
+.datatable-grid .MuiDataGrid-columnHeader {
+  border-bottom: inset 0px -1px 0px 0px rgba(225, 225, 225, 1) !important;
+  padding: 20px 20px 21px !important;
+}
+
+/* Remove filter icons and menu buttons */
+.datatable-grid .MuiDataGrid-columnHeaderTitleContainer {
+  justify-content: flex-start !important;
+}
+
+.datatable-grid .MuiDataGrid-columnHeaderTitle {
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  font-family: 'Inter', sans-serif !important;
+  color: #534D59 !important;
+}
+
+/* Hide any filter or menu icons */
+.datatable-grid .MuiDataGrid-columnHeader .MuiDataGrid-iconButtonContainer {
+  display: none !important;
+}
+
+.datatable-grid .MuiDataGrid-columnHeader .MuiDataGrid-menuIcon {
+  display: none !important;
+}
+
+.datatable-grid .MuiDataGrid-columnHeader .MuiDataGrid-sortIcon {
+  display: none !important;
+}
+
+/* Remove click effects and outlines from headers */
+.datatable-grid .MuiDataGrid-columnHeader {
+  cursor: default !important;
+  outline: none !important;
+  user-select: none !important;
+}
+
+.datatable-grid .MuiDataGrid-columnHeader:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.datatable-grid .MuiDataGrid-columnHeader:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.datatable-grid .MuiDataGrid-columnHeader:hover {
+  background-color: transparent !important;
+}
+
+.datatable-grid .MuiDataGrid-columnHeader:active {
+  background-color: transparent !important;
+}
+
+/* Data Cells */
+.datatable-grid .MuiDataGrid-cell {
+  border-bottom: 1px solid rgba(225, 225, 225, 1) !important;
+  font-size: 14px !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 400 !important;
+  color: #1B2128 !important;
+  padding: 20px 20px 21px !important;
+  min-height: 61px !important;
+  max-height: 61px !important;
+  outline: none !important;
+  cursor: default !important;
+}
+
+/* Remove border from last row */
+.datatable-grid .MuiDataGrid-row:last-child .MuiDataGrid-cell {
+  border-bottom: none !important;
+}
+
+/* Remove cell focus and click effects */
+.datatable-grid .MuiDataGrid-cell:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.datatable-grid .MuiDataGrid-cell:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.datatable-grid .MuiDataGrid-cell:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Rows */
+.datatable-grid .MuiDataGrid-row {
+  min-height: 61px !important;
+  max-height: 61px !important;
+  cursor: default !important;
+  border-bottom: 1px solid rgba(225, 225, 225, 1) !important;
+}
+
+/* Remove border from last row */
+.datatable-grid .MuiDataGrid-row:last-child {
+  border-bottom: none !important;
+}
+
+/* Remove row selection and click effects */
+.datatable-grid .MuiDataGrid-row:hover {
+  background-color: transparent !important;
+}
+
+.datatable-grid .MuiDataGrid-row.Mui-selected {
+  background-color: transparent !important;
+}
+
+.datatable-grid .MuiDataGrid-row.Mui-selected:hover {
+  background-color: transparent !important;
+}
+
+.datatable-grid .MuiDataGrid-row:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.datatable-grid .MuiDataGrid-row:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Footer Container */
+.datatable-grid .MuiDataGrid-footerContainer {
+  border-top: none !important;
+  background: #fff !important;
+  padding: 0 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+/* Virtual Scroller */
+.datatable-grid .MuiDataGrid-virtualScroller {
+  background: #fff !important;
+  overflow-y: auto !important;
+}
+
+.datatable-grid .MuiDataGrid-main {
+  background: #fff !important;
+}
+
+/* Scrollbar Styling */
+.datatable-grid .MuiDataGrid-virtualScroller::-webkit-scrollbar {
+  width: 8px;
+}
+
+.datatable-grid .MuiDataGrid-virtualScroller::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.datatable-grid .MuiDataGrid-virtualScroller::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.datatable-grid .MuiDataGrid-virtualScroller::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Pagination Styling */
+.datatable-pagination {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 16px 0 !important;
+  width: 100% !important;
+}
+
+.datatable-pagination .MuiPaginationItem-root {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 400 !important;
+  font-size: 12px !important;
+  color: #1B2128 !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.datatable-pagination .Mui-selected {
+  background-color: #fff !important;
+  color: #1B2128 !important;
+  border: 1.5px solid #E4E4E4 !important;
+}
+
+.datatable-pagination .MuiPaginationItem-ellipsis {
+  padding: 8px 11px 9px !important;
+}
+
+/* Link Styling */
+.datatable-link {
+  font-weight: 500 !important;
+  color: #5570F1 !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 14px !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+}
+
+.datatable-link:hover {
+  text-decoration: underline !important;
+}
+
+.datatable-link-copied {
+  font-weight: 500 !important;
+  color: #5570F1 !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 14px !important;
+  text-decoration: none !important;
+}
+
+/* Edit Button Styling */
+.datatable-edit-button {
+  padding: 17px 20px !important;
+}
+
+.datatable-edit-button:hover {
+  background-color: transparent !important;
+}
+
+.datatable-edit-icon {
+  color: #1D1B20 !important;
+  font-size: 18px !important;
+}
+
+/* Cell Content Styling */
+.datatable-cell-content {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: #1B2128 !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+/* Status Badge Styling */
+.datatable-cell-content span {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+}
+
+/* DataGrid Cell Styling */
+.datatable-grid .MuiDataGrid-cell {
+  padding: 16px 20px !important;
+  border-bottom: 1px solid rgba(225, 225, 225, 1) !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.datatable-grid .MuiDataGrid-row:last-child .MuiDataGrid-cell {
+  border-bottom: none !important;
+} 
+.datatable-pagination-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px 0;
+  background: #fff;
+}
+
+.datatable-pagination {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 600px) {
+  .datatable-container {
+    padding: 0;
+    border-radius: 8px;
+  }
+  .datatable-pagination-wrapper {
+    padding-top: 10px;
+    padding-bottom: 4px;
+  }
+}

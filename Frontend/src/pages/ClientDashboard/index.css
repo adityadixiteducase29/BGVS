@@ -1,0 +1,133 @@
+/* Client Dashboard Styles */
+.space-y-8 > * + * {
+  margin-top: 2rem;
+}
+
+.dashboard-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.text-gray-600 {
+  color: #6b7280;
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Search and Filter Bar */
+.search-filter-bar {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+}
+
+.search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  color: #9ca3af;
+  z-index: 1;
+}
+
+.search-input {
+  padding-left: 40px !important;
+}
+
+.search-input .MuiOutlinedInput-root {
+  border-radius: 8px;
+}
+
+.search-input .MuiOutlinedInput-input {
+  padding: 12px 14px;
+}
+
+.filter-container {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.filter-button {
+  border-radius: 8px !important;
+  text-transform: none !important;
+  font-weight: 500 !important;
+  padding: 8px 16px !important;
+}
+
+/* Data Table Styles */
+.datatable-cell-content {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.datatable-priority {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.datatable-priority-green {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.datatable-priority-orange {
+  background-color: #fed7aa;
+  color: #9a3412;
+}
+
+.datatable-priority-red {
+  background-color: #fecaca;
+  color: #991b1b;
+}
+
+/* Tabs Styles */
+.MuiTabs-root {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.MuiTab-root {
+  text-transform: none !important;
+  font-weight: 600 !important;
+  color: #6b7280 !important;
+  padding: 12px 24px !important;
+}
+
+.MuiTab-root.Mui-selected {
+  color: #3b82f6 !important;
+}
+
+.MuiTabs-indicator {
+  background-color: #3b82f6 !important;
+  height: 3px !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard-title {
+    font-size: 1.5rem;
+  }
+  
+  .search-filter-bar {
+    padding: 1rem;
+  }
+  
+  .filter-container {
+    justify-content: flex-start;
+    margin-top: 1rem;
+  }
+}

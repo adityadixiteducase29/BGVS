@@ -1,0 +1,484 @@
+/* Login Page Styles */
+.login-page {
+  min-height: 100vh;
+  background: white;
+  display: flex;
+  align-items: center;
+}
+
+/* Illustration Section */
+.illustration-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.illustration-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.illustration-container {
+  max-width: 600px;
+  width: 100%;
+}
+
+.placeholder-illustration {
+  width: 100%;
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.window-frame {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 300px;
+  height: 200px;
+  position: relative;
+}
+
+.window-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 15px;
+}
+
+.window-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.control {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.control.red { background: #ff5f56; }
+.control.yellow { background: #ffbd2e; }
+.control.green { background: #27ca3f; }
+
+.window-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.clock {
+  width: 60px;
+  height: 60px;
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  position: relative;
+}
+
+.clock-face {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.clock-hands {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.hour-hand, .minute-hand, .second-hand {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.9);
+  transform-origin: bottom center;
+}
+
+.hour-hand {
+  width: 3px;
+  height: 20px;
+  top: -10px;
+  left: -1.5px;
+  transform: rotate(45deg);
+}
+
+.minute-hand {
+  width: 2px;
+  height: 25px;
+  top: -12.5px;
+  left: -1px;
+  transform: rotate(90deg);
+}
+
+.second-hand {
+  width: 1px;
+  height: 30px;
+  top: -15px;
+  left: -0.5px;
+  background: #ff6b6b;
+  transform: rotate(180deg);
+}
+
+.plant {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.plant-pot {
+  width: 40px;
+  height: 30px;
+  background: #D0BCFF;
+  border-radius: 20px 20px 0 0;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.plant-leaves {
+  width: 60px;
+  height: 40px;
+  background: #4F378B;
+  border-radius: 30px 30px 0 0;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.plant-leaves::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 30px;
+  background: #4F378B;
+  border-radius: 20px 20px 0 0;
+}
+
+.device {
+  width: 80px;
+  height: 50px;
+  background: #21005D;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+}
+
+.device-screen {
+  width: 70px;
+  height: 35px;
+  background: #4F378B;
+  border-radius: 5px;
+  position: absolute;
+  top: 7px;
+  left: 5px;
+}
+
+.device-buttons {
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+}
+
+.device-buttons::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+}
+
+.padlock {
+  width: 50px;
+  height: 60px;
+  position: relative;
+}
+
+.lock-body {
+  width: 40px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.lock-shackle {
+  width: 50px;
+  height: 25px;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  border-bottom: none;
+  border-radius: 25px 25px 0 0;
+  position: absolute;
+  top: -5px;
+  left: -5px;
+}
+
+/* Form Section */
+.form-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #ffffff;
+}
+
+.form-container {
+  max-width: 400px;
+  width: 100%;
+}
+
+.form-header {
+  margin-bottom: 2.5rem;
+  text-align: left;
+}
+
+.signin-title {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 3rem;
+  color: #000000;
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Form Fields */
+.login-form {
+  width: 100%;
+}
+
+.form-field {
+  margin-bottom: 1.5rem;
+}
+
+.field-label {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: #000000;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #4F378B;
+  z-index: 2;
+}
+
+/* Override Reactstrap Input styles */
+.form-input {
+  width: 100%;
+  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+  border: none !important;
+  border-bottom: 2px solid #4F378B !important;
+  background: transparent !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 1rem !important;
+  font-weight: 400 !important;
+  color: #000000 !important;
+  outline: none !important;
+  transition: all 0.3s ease !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.form-input::placeholder {
+  color: #000000 !important;
+  opacity: 0.7;
+}
+
+.form-input:focus {
+  border-bottom-color: #21005D !important;
+  box-shadow: none !important;
+}
+
+.input-underline {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #4F378B;
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.form-input:focus + .input-underline {
+  transform: scaleX(1);
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #4F378B;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease;
+}
+
+.password-toggle:hover {
+  color: #21005D;
+}
+
+/* Form Options */
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.remember-me {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.check-label {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 300;
+  font-size: 0.75rem;
+  color: #000000;
+  margin: 0;
+  cursor: pointer;
+}
+
+.forgot-password {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 300;
+  font-size: 0.75rem;
+  color: #000000;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.forgot-password:hover {
+  color: #4F378B;
+}
+
+/* Login Button */
+.login-button {
+  width: 100%;
+  background: #4F378B !important;
+  border: none !important;
+  border-radius: 32px !important;
+  padding: 1rem 2rem !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 1.0625rem !important;
+  color: #ffffff !important;
+  cursor: pointer;
+  transition: all 0.3s ease !important;
+  box-shadow: 0px 4px 26px rgba(0, 0, 0, 0.25) !important;
+}
+
+.login-button:hover {
+  background: #21005D !important;
+  transform: translateY(-2px);
+  box-shadow: 0px 6px 30px rgba(0, 0, 0, 0.3) !important;
+}
+
+.login-button:active {
+  transform: translateY(0);
+}
+
+.login-button:focus {
+  box-shadow: 0px 4px 26px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Responsive Design */
+@media (max-width: 991.98px) {
+  .illustration-section {
+    display: none !important;
+  }
+  
+  .form-section {
+    padding: 1rem;
+  }
+  
+  .signin-title {
+    font-size: 2.5rem;
+  }
+  
+  .form-container {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .form-section {
+    padding: 1rem 0.5rem;
+  }
+  
+  .signin-title {
+    font-size: 2rem;
+  }
+  
+  .form-options {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .login-button {
+    padding: 0.875rem 1.5rem !important;
+    font-size: 1rem !important;
+  }
+}
+
+/* Custom checkbox styling */
+.form-check-input {
+  width: 15px !important;
+  height: 15px !important;
+  border: 1px solid #000000 !important;
+  border-radius: 2px !important;
+  background-color: transparent !important;
+  cursor: pointer;
+  margin: 0 !important;
+}
+
+.form-check-input:checked {
+  background-color: #4F378B !important;
+  border-color: #4F378B !important;
+}
+
+.form-check-input:focus {
+  box-shadow: 0 0 0 0.2rem rgba(79, 55, 139, 0.25) !important;
+}
+
+/* Remove default Reactstrap margins */
+.form-check {
+  margin: 0 !important;
+}
+
+.form-check-label {
+  margin: 0 !important;
+}

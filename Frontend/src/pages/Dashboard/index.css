@@ -1,0 +1,48 @@
+/* DashboardCards.css */
+.card-container-dashboard-admin {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  
+  .card-dashboard-admin {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: left;
+  /* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 237px;
+  flex-shrink: 0;
+}
+  .dashboard-title-admin {
+    font-size: 36px;
+    font-weight: bold;
+    color: #4F378B;
+    margin-bottom: 0.5rem;
+  }
+  .basic-title-admin {
+    font-size: 36px;
+    color: #4F378B;
+    margin-bottom: 0.5rem;
+  }
+  .card-icon-dashboard-admin {
+    font-size: 1.2rem;
+    color: #9ca3af; /* gray-400 */
+    margin-bottom: 0.25rem;
+  }
+  
+  .card-label-dashboard-admin {
+    font-size: 0.85rem;
+    color: #9ca3af;
+    margin-bottom: 0.5rem;
+  }
+  
+  .card-value-dashboard-admin {
+    font-size: 1.5rem;
+    color: #4F378B; /* purple-800 */
+  }
+  

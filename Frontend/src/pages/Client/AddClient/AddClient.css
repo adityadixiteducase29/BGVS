@@ -1,0 +1,129 @@
+/* PersonalInfo Component Styles */
+
+/* Form Field Styling */
+.form-field {
+    height: 56px;
+  }
+  
+  .form-field fieldset {
+    border-color: #79747E !important;
+  }
+  
+  .form-field:hover fieldset {
+    border-color: #6750A4 !important;
+  }
+  
+  .form-field.Mui-focused fieldset {
+    border-color: #6750A4 !important;
+  }
+  
+  /* Override Material-UI default focus styles */
+  .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+    border-color: #6750A4 !important;
+    border-width: 2px !important;
+  }
+  
+  .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+    border-color: #6750A4 !important;
+  }
+  
+  /* Select Field Styling */
+  .select-field {
+    height: 56px;
+    width: 250px;
+  }
+  
+  .select-field .MuiOutlinedInput-notchedOutline {
+    border-color: #79747E !important;
+  }
+  
+  .select-field:hover .MuiOutlinedInput-notchedOutline {
+    border-color: #6750A4 !important;
+  }
+  
+  .select-field.Mui-focused .MuiOutlinedInput-notchedOutline {
+    border-color: #6750A4 !important;
+  }
+  
+  /* DatePicker Styling */
+  .MuiDatePicker-root .MuiTextField-root fieldset {
+    border-color: #79747E !important;
+  }
+  
+  .MuiDatePicker-root .MuiTextField-root:hover fieldset {
+    border-color: #6750A4 !important;
+  }
+  
+  .MuiDatePicker-root .MuiTextField-root.Mui-focused fieldset {
+    border-color: #6750A4 !important;
+  }
+  
+  /* Focused Label Styling */
+  .form-field.Mui-focused .MuiInputLabel-root,
+  .select-field.Mui-focused .MuiInputLabel-root,
+  .MuiDatePicker-root .MuiTextField-root.Mui-focused .MuiInputLabel-root {
+    color: #6750A4 !important;
+  }
+  
+  /* Override Material-UI default label focus styles */
+  .MuiInputLabel-root.Mui-focused {
+    color: #6750A4 !important;
+  }
+  
+  /* Input Label Styling */
+  .input-label {
+    font-size: 12px;
+    color: #49454F;
+    background-color: #FEF7FF;
+    padding: 0 4px;
+    margin-bottom: 4px;
+  }
+  
+  /* Gender Label Specific Styling */
+  .gender-label {
+    font-size: 12px;
+    color: #49454F;
+    background-color: #fff;
+    padding: 0px 8px !important;
+    margin-bottom: 4px;
+  }
+  
+  .gender-label.Mui-focused {
+    color: #6750A4 !important;
+  }
+  
+  /* Section Headers */
+  .section-header {
+    font-weight: 500;
+    color: #3C2D63;
+    font-size: 1rem !important;
+    margin-bottom: 24px !important;
+  }
+  
+  /* Main Title */
+  .main-title {
+    font-weight: 500;
+    color: #4A4458;
+  }
+  
+  /* Checkbox Styling */
+  .checkbox-field {
+    color: #6750A4;
+  }
+  
+  .checkbox-field.Mui-checked {
+    color: #6750A4;
+  }
+  
+  /* Date Picker Caption */
+  .date-caption {
+    color: #49454F;
+    margin-top: 4px;
+  }
+  
+  /* Search Icon Styling */
+  .search-icon {
+    color: #49454F;
+    margin-right: 8px;
+  }
+  

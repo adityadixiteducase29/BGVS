@@ -1,0 +1,105 @@
+/* Verifier Dashboard specific styles */
+.dashboard-title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 1rem;
+}
+
+.basic-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.card-container-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(237px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.card-dashboard {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7ea;
+}
+
+.card-icon-dashboard {
+  width: 40px;
+  height: 40px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 1.25rem;
+}
+
+.card-label-dashboard {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.card-value-dashboard {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-top: 0.5rem;
+}
+
+/* Table specific styles */
+.datatable-cell-content {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 400;
+}
+
+/* Priority styling */
+.datatable-priority {
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-align: center;
+  min-width: 80px;
+}
+
+.datatable-priority-red {
+  color: #dc2626;
+}
+
+.datatable-priority-orange {
+  color: #d97706;
+}
+
+.datatable-priority-green {
+  color: #059669;
+}
+
+.datatable-priority-gray {
+  color: #6b7280;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card-container-dashboard {
+    grid-template-columns: 1fr;
+  }
+  
+  .card-dashboard {
+    padding: 1rem;
+  }
+  
+  .dashboard-title {
+    font-size: 1.5rem;
+  }
+  
+  .basic-title {
+    font-size: 1.25rem;
+  }
+}

@@ -1,0 +1,324 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import Poppins font from Google Fonts */
+
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+/* Smooth scrolling for the entire app */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  scroll-behavior: smooth;
+}
+
+/* Specific font weight utilities */
+.font-light {
+  font-weight: 300;
+}
+
+.font-regular {
+  font-weight: 400;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 271 81% 24%;
+    
+    /* Dashboard primary colors */
+    --primary: 271 81% 38%;
+    --primary-glow: 271 81% 48%;
+    --primary-dark: 271 81% 28%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(271 81% 38%), hsl(271 81% 48%));
+    --gradient-sidebar: linear-gradient(180deg, hsl(0 0% 98%), hsl(0 0% 95%));
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(0 0% 98%));
+    
+    /* Shadows */
+    --shadow-glow: 0 0 40px hsl(271 81% 38% / 0.3);
+    --shadow-card: 0 8px 32px hsl(0 0% 90% / 0.2);
+    
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --card: 0 0% 100%;
+    --card-foreground: 271 81% 24%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 271 81% 24%;
+
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 280 75% 95%;
+    --secondary-foreground: 271 81% 24%;
+
+    --muted: 280 75% 95%;
+    --muted-foreground: 271 81% 44%;
+
+    --accent: 280 75% 95%;
+    --accent-foreground: 271 81% 24%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 271 81% 90%;
+    --input: 271 81% 90%;
+    --ring: 271 81% 38%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 271 81% 24%;
+    --sidebar-primary: 271 81% 38%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 280 75% 95%;
+    --sidebar-accent-foreground: 271 81% 24%;
+    --sidebar-active: 280 100% 94%;
+    --sidebar-border: 271 81% 90%;
+    --sidebar-ring: 271 81% 38%;
+  }
+
+  .dark {
+    --background: 271 81% 5%;
+    --foreground: 0 0% 95%;
+
+    --card: 271 81% 8%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 271 81% 8%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 271 81% 38%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 271 81% 15%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 271 81% 15%;
+    --muted-foreground: 271 81% 70%;
+
+    --accent: 271 81% 15%;
+    --accent-foreground: 0 0% 95%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 95%;
+
+    --border: 271 81% 20%;
+    --input: 271 81% 20%;
+    --ring: 271 81% 38%;
+    --sidebar-background: 271 81% 10%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 271 81% 38%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 271 81% 15%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-active: 280 100% 94%;
+    --sidebar-border: 271 81% 20%;
+    --sidebar-ring: 271 81% 38%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Active NavLink styling */
+  .active {
+    @apply bg-[#EADDFF];
+  }
+  
+  /* Show indicator when NavLink is active */
+  .active .navlink-indicator {
+    @apply block;
+  }
+  
+  /* Text color for active NavLink */
+  .active .h-5,
+  .active span {
+    @apply text-primary;
+  }
+}
+
+.button-primary {
+  background-color: #4F378B !important;
+}
+.button-text-white {
+  color: #fff !important;
+}
+
+/* Custom Button Styles - Reusable across the application */
+.custom-primary-button {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 10px 20px !important;
+  font-size: revert !important;
+  font-weight: 500 !important;
+  font-family: 'Poppins', sans-serif !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 40px !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+.custom-primary-button:hover {
+  opacity: 0.9 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.custom-primary-button:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(79, 55, 139, 0.2) !important;
+}
+
+.custom-primary-button:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.custom-primary-button:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.custom-primary-button:disabled:hover {
+  opacity: 0.6 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Additional Button Variants - Reusable across the application */
+.custom-secondary-button {
+  background-color: hsl(var(--secondary)) !important;
+  color: hsl(var(--secondary-foreground)) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 10px 20px !important;
+  font-weight: 500 !important;
+  font-family: 'Poppins', sans-serif !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 40px !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+.custom-secondary-button:hover {
+  opacity: 0.9 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.custom-outline-button {
+  background-color: transparent !important;
+  color: hsl(var(--primary)) !important;
+  border: 2px solid hsl(var(--primary)) !important;
+  border-radius: 8px !important;
+  padding: 10px 20px !important;
+  font-weight: 500 !important;
+  font-family: 'Poppins', sans-serif !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 40px !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+.custom-outline-button:hover {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.custom-success-button {
+  background-color: #10B981 !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 10px 20px !important;
+  font-weight: 500 !important;
+  font-family: 'Poppins', sans-serif !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 40px !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+.custom-success-button:hover {
+  opacity: 0.9 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.custom-danger-button {
+  background-color: #EF4444 !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 10px 20px !important;
+  font-weight: 500 !important;
+  font-family: 'Poppins', sans-serif !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 40px !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+.custom-danger-button:hover {
+  opacity: 0.9 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+

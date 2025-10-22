@@ -1,0 +1,93 @@
+
+.file-upload-button {
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+    border: 1px solid #DDE2E5 !important;
+    border-radius: 4px !important;
+    padding: 8px 16px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    min-width: 120px !important;
+    text-align: center !important;
+    box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  .file-upload-button:hover {
+    background-color: #F8F9FA !important;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.15) !important;
+  }
+  
+  /* File Upload Container */
+  .file-upload-container {
+    display: flex !important;
+    align-items: center !important;
+    gap: 16px !important;
+  }
+  
+  /* File Upload Input */
+  .file-upload-input {
+    display: none !important;
+  }
+  
+  /* File Upload Label */
+  .file-upload-label {
+    margin-bottom: 0 !important;
+  }
+  
+  /* Upload Box Styling */
+  .upload-box {
+    border: 1px solid #DDE2E5 !important;
+    border-radius: 8px !important;
+    padding: 24px !important;
+    margin-bottom: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+  
+  .upload-box:last-child {
+    margin-bottom: 0 !important;
+  }
+  
+  /* Upload Content */
+  .upload-content {
+    display: flex !important;
+    align-items: center !important;
+    gap: 16px !important;
+  }
+  
+  /* Upload Icon */
+  .upload-icon {
+    width: 48px !important;
+    height: 48px !important;
+  }
+  
+  /* Upload Text */
+  .upload-title {
+    font-weight: 500 !important;
+    color: #5E6366 !important;
+    margin-bottom: 8px !important;
+  }
+  
+  .upload-description {
+    color: #5E6366 !important;
+    font-weight: 300 !important;
+    font-size: 14px !important;
+  }
+  
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
+    .upload-box {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 16px !important;
+    }
+    
+    .file-upload-container {
+      width: 100% !important;
+      justify-content: flex-start !important;
+    }
+  }
+  

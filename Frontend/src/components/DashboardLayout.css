@@ -1,0 +1,33 @@
+/* Dashboard Layout Styles */
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+.dashboard-main {
+  background-color: white;
+  flex: 1;
+  margin-left: 348px; /* Account for fixed sidebar width */
+  padding: 2rem;
+  overflow-y: auto;
+  /* background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); */
+  transition: margin-left 0.3s ease;
+}
+
+/* When sidebar is collapsed */
+.dashboard-layout .app-sidebar.collapsed + .dashboard-main {
+  margin-left: 48px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dashboard-main {
+    margin-left: 0;
+    padding: 1rem;
+  }
+  
+  .dashboard-layout .app-sidebar.collapsed + .dashboard-main {
+    margin-left: 0;
+  }
+}

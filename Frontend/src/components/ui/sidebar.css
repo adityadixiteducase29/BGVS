@@ -1,0 +1,237 @@
+/* Sidebar Custom Styling - Overrides Bootstrap conflicts */
+
+/* CSS Custom Properties (Variables) */
+:root {
+  --sidebar-width: 348px;
+  --sidebar-width-mobile: 18rem;
+  --sidebar-width-icon: 3rem;
+}
+
+/* Base sidebar styling */
+.sidebar,
+[data-radix-sidebar] {
+  background: #F8F9FA !important;
+  border-right: 1px solid #E5E7EA !important;
+}
+
+/* Sidebar content styling */
+.sidebar-content,
+[data-sidebar="content"] {
+  background: linear-gradient(180deg, #F8F9FA 0%, #F1F3F4 100%) !important;
+}
+
+/* Logo section styling */
+.sidebar-logo {
+  border-bottom: 1px solid #E5E7EA !important;
+  /* padding: 1.5rem !important; */
+}
+
+.sidebar-logo img {
+  width: 71px !important;
+  height: 71px !important;
+}
+
+/* Navigation section styling */
+.sidebar-navigation {
+  padding: 1rem 0.75rem !important;
+}
+
+.sidebar-navigation-label {
+  color: #3C2D63 !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  margin-bottom: 0.5rem !important;
+  padding: 0 0.5rem !important;
+}
+
+/* Menu items styling */
+.sidebar-menu {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.25rem !important;
+}
+
+.sidebar-menu-item {
+  position: relative !important;
+}
+
+/* Menu button styling */
+.sidebar-menu-button {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 25px 10px !important;
+  border-radius: 8px !important;
+  width: 196px !important;
+  height: 51px !important;
+  text-decoration: none !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  color: #3C2D63 !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  margin: 0 !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+/* Hover state */
+.sidebar-menu-button:hover:not(.active) {
+  background-color: #F3F4F6 !important;
+}
+
+/* Active state */
+.sidebar-menu-button.active {
+  background-color: #EADDFF !important;
+  color: #3C2D63 !important;
+  font-weight: 500 !important;
+  padding: 25px 10px !important;
+  height: 51px !important;
+  width: 196px !important;
+}
+
+/* Icon styling */
+.sidebar-menu-button svg,
+.sidebar-menu-button .icon {
+  color: #3C2D63 !important;
+  min-width: 20px !important;
+  height: 20px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Text styling */
+.sidebar-menu-button span {
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  font-weight: 500 !important;
+  color: inherit !important;
+  white-space: nowrap !important;
+}
+
+/* Bootstrap overrides for sidebar */
+.sidebar *,
+[data-radix-sidebar] * {
+  box-sizing: border-box !important;
+}
+
+.sidebar button,
+.sidebar a,
+.sidebar div,
+[data-radix-sidebar] button,
+[data-radix-sidebar] a,
+[data-radix-sidebar] div {
+  font-family: inherit !important;
+  line-height: inherit !important;
+}
+
+/* Override Bootstrap's default button and link styles in sidebar */
+.sidebar .btn,
+.sidebar button,
+.sidebar a,
+[data-radix-sidebar] .btn,
+[data-radix-sidebar] button,
+[data-radix-sidebar] a {
+  background: none !important;
+  border: none !important;
+  padding: inherit !important;
+  margin: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  text-decoration: none !important;
+  color: inherit !important;
+}
+
+/* Ensure sidebar navigation items have proper styling */
+.sidebar nav a,
+[data-radix-sidebar] nav a {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+  text-decoration: none !important;
+  color: #3C2D63 !important;
+}
+
+/* Active state styling */
+.sidebar nav a.active,
+[data-radix-sidebar] nav a.active {
+  background-color: #EADDFF !important;
+  color: #3C2D63 !important;
+  font-weight: 500 !important;
+}
+
+/* Hover state styling */
+.sidebar nav a:hover:not(.active),
+[data-radix-sidebar] nav a:hover:not(.active) {
+  background-color: #F3F4F6 !important;
+}
+
+/* Icon styling in sidebar */
+.sidebar nav a svg,
+[data-radix-sidebar] nav a svg {
+  color: #3C2D63 !important;
+  min-width: 20px !important;
+  height: 20px !important;
+}
+
+/* Pin button styling */
+.sidebar-pin-button {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  z-index: 10 !important;
+  background: transparent !important;
+  border: none !important;
+  color: #3C2D63 !important;
+  padding: 8px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.sidebar-pin-button:hover {
+  background-color: rgba(60, 45, 99, 0.1) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sidebar-navigation {
+    padding: 0.5rem !important;
+  }
+  
+  .sidebar-logo {
+    padding: 1rem !important;
+  }
+}
+
+/* Fix for collapsed state icon centering */
+[data-state="collapsed"] .sidebar-menu-button,
+.sidebar-menu-button[data-collapsed="true"] {
+  justify-content: center !important;
+}
+
+[data-state="collapsed"] .sidebar-menu-button svg,
+.sidebar-menu-button[data-collapsed="true"] svg {
+  margin: 0 auto !important;
+  display: block !important;
+}
+
+/* Ensure proper centering in collapsed state */
+[data-state="collapsed"] .sidebar-menu,
+.sidebar-menu[data-collapsed="true"] {
+  align-items: center !important;
+}
+
+[data-state="collapsed"] .sidebar-menu-item,
+.sidebar-menu-item[data-collapsed="true"] {
+  display: flex !important;
+  justify-content: center !important;
+}
