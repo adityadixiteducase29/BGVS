@@ -1,15 +1,23 @@
 {
-    "version": 2,
-    "builds": [
-      {
-        "src": "server.js",
-        "use": "@vercel/node"
-      }
-    ],
-    "routes": [
-      {
-        "src": "/(.*)",
-        "dest": "server.js"
-      }
-    ]
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/server.js",        // ← Your actual server file
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",                // ← Catch all routes
+      "dest": "src/server.js"        // ← Route to your server
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"         // ← Set production environment
+  },
+  "functions": {
+    "src/server.js": {
+      "maxDuration": 30             // ← 30 second timeout
+    }
   }
+}
