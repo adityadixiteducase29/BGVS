@@ -1,5 +1,5 @@
 // API Base Configuration
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'https://bgvs-backend.vercel.app/api';
 
 // API Service Class
 class ApiService {
@@ -563,7 +563,7 @@ class ApiService {
     // Health Check
     async healthCheck() {
         try {
-            const response = await fetch('http://localhost:3000/health');
+            const response = await fetch('https://bgvs-backend.vercel.app/health');
             return response.ok;
         } catch (error) {
             return false;
