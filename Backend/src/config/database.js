@@ -1,11 +1,18 @@
 const mysql = require('mysql2');
 
+// Load environment variables
+require('dotenv').config();
+
 const dbConfig = {
     host: process.env.DB_HOST || '127.0.0.1',
     user: process.env.DB_USER || 'verification_user',
     password: process.env.DB_PASSWORD || 'Verification@123',
     database: process.env.DB_NAME || 'background_verification_system',
-    port: process.env.DB_PORT || 3306
+    port: process.env.DB_PORT || 3306,
+    // SSL configuration for Aiven MySQL
+    ssl: process.env.DB_SSL === 'true' ? {
+        rejectUnauthorized: false
+    } : false
 };
 
 // Create a single connection for testing

@@ -2,7 +2,7 @@
 -- This removes the confusion between companies and clients
 -- A "client" is actually a "company" in this system
 
-USE background_verification_system;
+USE defaultdb;
 
 -- Drop existing tables in correct order (due to foreign key constraints)
 DROP TABLE IF EXISTS application_documents;
