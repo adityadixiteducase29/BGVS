@@ -92,7 +92,6 @@ class Company {
                         CASE WHEN cs.is_enabled = 1 THEN cs.service_name END
                         SEPARATOR ','
                     ) as enabled_services,
-                    CONCAT('http://localhost:5173/user-form/', c.id) as company_link,
                     COALESCE(pending_apps.pending_count, 0) as pending_count
                 FROM companies c
                 LEFT JOIN company_services cs ON c.id = cs.company_id
@@ -114,7 +113,8 @@ class Company {
             return rows.map(row => ({
                 ...row,
                 enabled_services: row.enabled_services ? row.enabled_services.split(',').filter(Boolean) : [],
-                pending_count: parseInt(row.pending_count) || 0
+                pending_count: parseInt(row.pending_count) || 0,
+                company_link: `${config.frontendUrl}/user-form/${row.id}`
             }));
         } catch (error) {
             throw new Error('Failed to fetch companies');
