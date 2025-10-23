@@ -1,5 +1,6 @@
 const Company = require('../models/Company');
 const bcrypt = require('bcrypt');
+const config = require('../config/environment');
 
 class CompanyController {
     // Create a new company
@@ -33,7 +34,7 @@ class CompanyController {
                     id: savedCompany.id,
                     name: savedCompany.name,
                     email: savedCompany.email,
-                    verification_form_link: `http://localhost:5173/user-form/${savedCompany.id}`
+                    verification_form_link: `${config.frontendUrl}/user-form/${savedCompany.id}`
                 }
             });
 

@@ -21,9 +21,12 @@ const config = {
     // Security configuration
     bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS) || 12,
     
+    // Frontend URL configuration
+    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+    
     // CORS configuration
     cors: {
-        origin: process.env.CORS_ORIGIN || ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
+        origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cache-Control', 'Pragma'],
