@@ -190,14 +190,14 @@ const Application = () => {
       sortable: false,
       renderCell: (params) => (
         <div className="datatable-cell-content" style={{ justifyContent: 'center', gap: '8px' }}>
-          <IconButton
+          {/* <IconButton
             size="small"
             onClick={() => handleEditClick(params.row)}
             title="Edit Application"
             style={{ color: '#1976d2' }}
           >
             <EditOutlinedIcon fontSize="small" />
-          </IconButton>
+          </IconButton> */}
           {user?.user_type === 'admin' && (
             <IconButton
               size="small"
