@@ -1,6 +1,9 @@
 const Application = require('../models/Application');
 const Company = require('../models/Company');
 const FileStorageService = require('../services/FileStorageService');
+const csv = require('csv-parser');
+const fs = require('fs');
+const path = require('path');
 
 class ApplicationController {
     constructor() {
@@ -526,6 +529,427 @@ class ApplicationController {
             });
         }
     }
+
+    // Generate CSV template for bulk import
+    static async generateCSVTemplate(req, res) {
+        try {
+            const { companyId } = req.params;
+
+            // Validate company exists
+            const company = await Company.findById(companyId);
+            if (!company) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Company not found'
+                });
+            }
+
+            // Define CSV headers with descriptions
+            const csvHeaders = [
+                // Basic Information (Required)
+                'applicant_first_name*', 'applicant_last_name*', 'applicant_email*', 'applicant_phone',
+                'applicant_dob', 'applicant_address', 'position_applied', 'department',
+                
+                // Personal Information
+                'gender', 'languages', 'father_name', 'mother_name', 'emergency_contact_number',
+                
+                // Current Address
+                'current_house_no', 'current_area_locality', 'current_area_locality_2', 'current_district',
+                'current_police_station', 'current_pincode', 'current_tehsil', 'current_post_office', 'current_landmark',
+                
+                // Permanent Address
+                'use_current_as_permanent', 'permanent_house_no', 'permanent_area_locality', 'permanent_area_locality_2',
+                'permanent_district', 'permanent_police_station', 'permanent_pincode', 'permanent_tehsil',
+                'permanent_post_office', 'permanent_landmark',
+                
+                // Education
+                'highest_education', 'institute_name', 'education_city', 'grades',
+                'education_from_date', 'education_to_date', 'education_address',
+                
+                // References
+                'reference1_name', 'reference1_address', 'reference1_relation', 'reference1_contact', 'reference1_police_station',
+                'reference2_name', 'reference2_address', 'reference2_relation', 'reference2_contact', 'reference2_police_station',
+                'reference3_name', 'reference3_address', 'reference3_relation', 'reference3_contact', 'reference3_police_station',
+                
+                // Identity Documents
+                'aadhar_number', 'pan_number',
+                
+                // Employment
+                'company_name', 'designation', 'employee_id', 'employment_location',
+                'employment_from_date', 'employment_to_date', 'hr_number', 'hr_email',
+                'work_responsibility', 'salary', 'reason_of_leaving', 'previous_manager',
+                
+                // Neighbor Information
+                'neighbour1_family_members', 'neighbour1_name', 'neighbour1_mobile', 'neighbour1_since', 'neighbour1_remark',
+                'neighbour2_name', 'neighbour2_mobile', 'neighbour2_since', 'neighbour2_remark',
+                
+                // Residence Information
+                'residing_date', 'residing_remark', 'bike_quantity', 'car_quantity', 'ac_quantity', 'place',
+                'house_owner_name', 'house_owner_contact', 'house_owner_address', 'residing'
+            ];
+
+            // Create sample data row
+            const sampleRow = [
+                'John', 'Doe', 'john.doe@example.com', '+91-9876543210', '1990-01-15', '123 Main Street, Delhi',
+                'Software Engineer', 'IT', 'Male', 'English, Hindi', 'Robert Doe', 'Jane Doe', '+91-9876543211',
+                '123', 'Sample Area', 'Near Market', 'Delhi', 'Central Police Station', '110001', 'Central', 'GPO', 'Near Metro',
+                'true', '', '', '', '', '', '', '', '', '',
+                'Bachelor of Technology', 'IIT Delhi', 'Delhi', '8.5 CGPA', '2010-07-01', '2014-06-30', 'IIT Delhi Campus',
+                'Alice Smith', '123 Reference St', 'Friend', '+91-9876543212', 'Central Police Station',
+                'Bob Johnson', '456 Reference Ave', 'Colleague', '+91-9876543213', 'Central Police Station',
+                'Charlie Brown', '789 Reference Rd', 'Neighbor', '+91-9876543214', 'Central Police Station',
+                '123456789012', 'ABCDE1234F',
+                'Tech Corp', 'Senior Developer', 'EMP001', 'Delhi', '2020-01-01', '2023-12-31',
+                '+91-9876543215', 'hr@techcorp.com', 'Software Development', '800000', 'Career Growth', 'Manager Name',
+                '4', 'Neighbor One', '+91-9876543216', '2020-01-01', 'Good neighbor',
+                'Neighbor Two', '+91-9876543217', '2020-01-01', 'Helpful neighbor',
+                '2020-01-01', 'Living here since 2020', '1', '1', '2', 'Delhi', 'Landlord Name', '+91-9876543218', 'Landlord Address', 'Rented'
+            ];
+
+            // Create CSV content
+            let csvContent = csvHeaders.join(',') + '\n';
+            csvContent += sampleRow.join(',') + '\n';
+
+            // Set response headers for file download
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', `attachment; filename="application_template_${company.name.replace(/\s+/g, '_')}.csv"`);
+            
+            res.send(csvContent);
+
+        } catch (error) {
+            console.error('Error generating CSV template:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to generate CSV template',
+                error: error.message
+            });
+        }
+    }
+
+    // Import applications from CSV
+    static async importFromCSV(req, res) {
+        try {
+            const { companyId } = req.params;
+
+            // Validate company exists
+            const company = await Company.findById(companyId);
+            if (!company) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Company not found'
+                });
+            }
+
+            if (!req.file) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No CSV file uploaded'
+                });
+            }
+
+            const csvFilePath = req.file.path;
+            const results = {
+                total: 0,
+                successful: 0,
+                failed: 0,
+                errors: [],
+                successfulApplications: [],
+                failedApplications: []
+            };
+
+            // Parse CSV file
+            const applications = [];
+            await new Promise((resolve, reject) => {
+                fs.createReadStream(csvFilePath)
+                    .pipe(csv())
+                    .on('data', (row) => {
+                        // Clean row keys to remove asterisks from headers
+                        const cleanedRow = {};
+                        Object.keys(row).forEach(key => {
+                            cleanedRow[key.replace(/\*/g, '')] = row[key];
+                        });
+                        applications.push(cleanedRow);
+                    })
+                    .on('end', resolve)
+                    .on('error', reject);
+            });
+
+            results.total = applications.length;
+
+                // Process each application
+                for (let i = 0; i < applications.length; i++) {
+                    const row = applications[i];
+                    const rowNumber = i + 2; // +2 because CSV is 1-indexed and we skip header
+
+                    try {
+                        // Debug log for problematic data
+                        if (row.applicant_first_name === 'John' && row.applicant_last_name === 'Doe') {
+                            console.log('Debug John Doe row:', {
+                                grades: row.grades,
+                                education_from_date: row.education_from_date,
+                                education_to_date: row.education_to_date
+                            });
+                        }
+                    // Validate required fields
+                    if (!row.applicant_first_name || !row.applicant_last_name || !row.applicant_email) {
+                        throw new Error(`Missing required fields: ${!row.applicant_first_name ? 'applicant_first_name ' : ''}${!row.applicant_last_name ? 'applicant_last_name ' : ''}${!row.applicant_email ? 'applicant_email' : ''}`);
+                    }
+
+                    // Validate email format
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(row.applicant_email.trim())) {
+                        throw new Error(`Invalid email format: ${row.applicant_email}`);
+                    }
+
+                    // Helper function to convert date format DD/MM/YYYY to YYYY-MM-DD
+                    const convertDate = (dateString) => {
+                        if (!dateString) return null;
+                        const trimmed = dateString.toString().trim();
+                        
+                        // Skip if it looks like a grade or other non-date value
+                        if (trimmed.match(/[A-Za-z]/) && !trimmed.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+                            return null;
+                        }
+                        
+                        // Check if it's in DD/MM/YYYY format
+                        if (trimmed.includes('/')) {
+                            const parts = trimmed.split('/');
+                            if (parts.length === 3 && parts.every(part => !isNaN(part))) {
+                                return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                            }
+                        }
+                        
+                        // Check if it's already in YYYY-MM-DD format
+                        if (trimmed.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                            return trimmed;
+                        }
+                        
+                        return null;
+                    };
+
+                    // Helper function to validate and clean pincode
+                    const cleanPincode = (pincode) => {
+                        if (!pincode) return null;
+                        const cleaned = pincode.toString().trim().replace(/\D/g, ''); // Remove non-digits
+                        return cleaned.length <= 10 ? cleaned : cleaned.substring(0, 10);
+                    };
+
+                    // Helper function to clean Aadhar number (12 digits)
+                    const cleanAadhar = (aadhar) => {
+                        if (!aadhar) return null;
+                        const cleaned = aadhar.toString().trim().replace(/\D/g, ''); // Remove non-digits
+                        return cleaned.length <= 12 ? cleaned : cleaned.substring(0, 12);
+                    };
+
+                    // Helper function to clean PAN number (10 characters)
+                    const cleanPAN = (pan) => {
+                        if (!pan) return null;
+                        const cleaned = pan.toString().trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+                        return cleaned.length <= 10 ? cleaned : cleaned.substring(0, 10);
+                    };
+
+                    // Check for duplicate email
+                    const existingApplication = await Application.findByEmail(row.applicant_email, companyId);
+                    if (existingApplication) {
+                        throw new Error(`Duplicate email: ${row.applicant_email} already exists`);
+                    }
+
+                    // Clean phone number (handle scientific notation)
+                    let cleanPhone = null;
+                    if (row.applicant_phone) {
+                        const phoneStr = row.applicant_phone.toString();
+                        // Check if it's scientific notation
+                        if (phoneStr.includes('E+') || phoneStr.includes('e+')) {
+                            // Convert scientific notation to regular number
+                            const num = parseFloat(phoneStr);
+                            if (!isNaN(num) && num > 0) {
+                                cleanPhone = `+91-${Math.floor(num).toString()}`;
+                            }
+                        } else {
+                            cleanPhone = phoneStr.trim();
+                        }
+                    }
+
+                    // Clean and prepare data
+                    const applicationData = {
+                        company_id: parseInt(companyId),
+                        applicant_first_name: row.applicant_first_name.trim(),
+                        applicant_last_name: row.applicant_last_name.trim(),
+                        applicant_email: row.applicant_email.trim().toLowerCase(),
+                        applicant_phone: cleanPhone,
+                        applicant_dob: convertDate(row.applicant_dob),
+                        applicant_address: row.applicant_address ? row.applicant_address.trim() : null,
+                        position_applied: row.position_applied ? row.position_applied.trim() : null,
+                        department: row.department ? row.department.trim() : null,
+                        application_status: 'pending',
+                        
+                        // Personal information
+                        gender: row.gender ? row.gender.trim() : null,
+                        languages: row.languages ? row.languages.trim() : null,
+                        father_name: row.father_name ? row.father_name.trim() : null,
+                        mother_name: row.mother_name ? row.mother_name.trim() : null,
+                        emergency_contact_number: row.emergency_contact_number ? row.emergency_contact_number.trim() : null,
+                        
+                        // Current address
+                        current_house_no: row.current_house_no ? row.current_house_no.trim() : null,
+                        current_area_locality: row.current_area_locality ? row.current_area_locality.trim() : null,
+                        current_area_locality_2: row.current_area_locality_2 ? row.current_area_locality_2.trim() : null,
+                        current_district: row.current_district ? row.current_district.trim() : null,
+                        current_police_station: row.current_police_station ? row.current_police_station.trim() : null,
+                        current_pincode: cleanPincode(row.current_pincode),
+                        current_tehsil: row.current_tehsil ? row.current_tehsil.trim() : null,
+                        current_post_office: row.current_post_office ? row.current_post_office.trim() : null,
+                        current_landmark: row.current_landmark ? row.current_landmark.trim() : null,
+                        
+                        // Permanent address
+                        use_current_as_permanent: row.use_current_as_permanent === 'true' || row.use_current_as_permanent === true,
+                        permanent_house_no: row.permanent_house_no ? row.permanent_house_no.trim() : null,
+                        permanent_area_locality: row.permanent_area_locality ? row.permanent_area_locality.trim() : null,
+                        permanent_area_locality_2: row.permanent_area_locality_2 ? row.permanent_area_locality_2.trim() : null,
+                        permanent_district: row.permanent_district ? row.permanent_district.trim() : null,
+                        permanent_police_station: row.permanent_police_station ? row.permanent_police_station.trim() : null,
+                        permanent_pincode: cleanPincode(row.permanent_pincode),
+                        permanent_tehsil: row.permanent_tehsil ? row.permanent_tehsil.trim() : null,
+                        permanent_post_office: row.permanent_post_office ? row.permanent_post_office.trim() : null,
+                        permanent_landmark: row.permanent_landmark ? row.permanent_landmark.trim() : null,
+                        
+                        // Education
+                        highest_education: row.highest_education ? row.highest_education.trim() : null,
+                        institute_name: row.institute_name ? row.institute_name.trim() : null,
+                        education_city: row.education_city ? row.education_city.trim() : null,
+                        grades: row.grades ? row.grades.trim() : null,
+                        education_from_date: convertDate(row.education_from_date),
+                        education_to_date: convertDate(row.education_to_date),
+                        education_address: row.education_address ? row.education_address.trim() : null,
+                        
+                        // References
+                        reference1_name: row.reference1_name ? row.reference1_name.trim() : null,
+                        reference1_address: row.reference1_address ? row.reference1_address.trim() : null,
+                        reference1_relation: row.reference1_relation ? row.reference1_relation.trim() : null,
+                        reference1_contact: row.reference1_contact ? row.reference1_contact.trim() : null,
+                        reference1_police_station: row.reference1_police_station ? row.reference1_police_station.trim() : null,
+                        reference2_name: row.reference2_name ? row.reference2_name.trim() : null,
+                        reference2_address: row.reference2_address ? row.reference2_address.trim() : null,
+                        reference2_relation: row.reference2_relation ? row.reference2_relation.trim() : null,
+                        reference2_contact: row.reference2_contact ? row.reference2_contact.trim() : null,
+                        reference2_police_station: row.reference2_police_station ? row.reference2_police_station.trim() : null,
+                        reference3_name: row.reference3_name ? row.reference3_name.trim() : null,
+                        reference3_address: row.reference3_address ? row.reference3_address.trim() : null,
+                        reference3_relation: row.reference3_relation ? row.reference3_relation.trim() : null,
+                        reference3_contact: row.reference3_contact ? row.reference3_contact.trim() : null,
+                        reference3_police_station: row.reference3_police_station ? row.reference3_police_station.trim() : null,
+                        
+                        // Identity documents
+                        aadhar_number: cleanAadhar(row.aadhar_number),
+                        pan_number: cleanPAN(row.pan_number),
+                        
+                        // Employment
+                        company_name: row.company_name ? row.company_name.trim() : null,
+                        designation: row.designation ? row.designation.trim() : null,
+                        employee_id: row.employee_id ? row.employee_id.trim() : null,
+                        employment_location: row.employment_location ? row.employment_location.trim() : null,
+                        employment_from_date: convertDate(row.employment_from_date),
+                        employment_to_date: convertDate(row.employment_to_date),
+                        hr_number: row.hr_number ? row.hr_number.trim() : null,
+                        hr_email: row.hr_email ? row.hr_email.trim() : null,
+                        work_responsibility: row.work_responsibility ? row.work_responsibility.trim() : null,
+                        salary: row.salary ? row.salary.trim() : null,
+                        reason_of_leaving: row.reason_of_leaving ? row.reason_of_leaving.trim() : null,
+                        previous_manager: row.previous_manager ? row.previous_manager.trim() : null,
+                        
+                        // Neighbor information
+                        neighbour1_family_members: row.neighbour1_family_members ? row.neighbour1_family_members.trim() : null,
+                        neighbour1_name: row.neighbour1_name ? row.neighbour1_name.trim() : null,
+                        neighbour1_mobile: row.neighbour1_mobile ? row.neighbour1_mobile.trim() : null,
+                        neighbour1_since: convertDate(row.neighbour1_since),
+                        neighbour1_remark: row.neighbour1_remark ? row.neighbour1_remark.trim() : null,
+                        neighbour2_name: row.neighbour2_name ? row.neighbour2_name.trim() : null,
+                        neighbour2_mobile: row.neighbour2_mobile ? row.neighbour2_mobile.trim() : null,
+                        neighbour2_since: convertDate(row.neighbour2_since),
+                        neighbour2_remark: row.neighbour2_remark ? row.neighbour2_remark.trim() : null,
+                        
+                        // Residence information
+                        residing_date: convertDate(row.residing_date),
+                        residing_remark: row.residing_remark ? row.residing_remark.trim() : null,
+                        bike_quantity: row.bike_quantity ? parseInt(row.bike_quantity) || 0 : 0,
+                        car_quantity: row.car_quantity ? parseInt(row.car_quantity) || 0 : 0,
+                        ac_quantity: row.ac_quantity ? parseInt(row.ac_quantity) || 0 : 0,
+                        place: row.place ? row.place.trim() : null,
+                        house_owner_name: row.house_owner_name ? row.house_owner_name.trim() : null,
+                        house_owner_contact: row.house_owner_contact ? row.house_owner_contact.trim() : null,
+                        house_owner_address: row.house_owner_address ? row.house_owner_address.trim() : null,
+                        residing: row.residing ? row.residing.trim() : null
+                    };
+
+                    // Create and save application
+                    const application = new Application(applicationData);
+                    const savedApplication = await application.save();
+
+                    results.successful++;
+                    results.successfulApplications.push({
+                        row: rowNumber,
+                        applicationId: savedApplication.id,
+                        applicantName: `${savedApplication.applicant_first_name} ${savedApplication.applicant_last_name}`,
+                        email: savedApplication.applicant_email
+                    });
+
+                    } catch (error) {
+                        results.failed++;
+                        
+                        // Enhanced error message for various issues
+                        let enhancedError = error.message;
+                        if (error.message.includes('Incorrect date value')) {
+                            const fieldMatch = error.message.match(/column '([^']+)'/);
+                            if (fieldMatch) {
+                                const fieldName = fieldMatch[1];
+                                enhancedError = `Invalid date format in ${fieldName} column. Expected DD/MM/YYYY or YYYY-MM-DD format.`;
+                            }
+                        } else if (error.message.includes('Data too long for column')) {
+                            const fieldMatch = error.message.match(/column '([^']+)'/);
+                            if (fieldMatch) {
+                                const fieldName = fieldMatch[1];
+                                enhancedError = `Data too long for ${fieldName} column. Please check your CSV data alignment.`;
+                            }
+                        }
+                        
+                        results.errors.push({
+                            row: rowNumber,
+                            error: enhancedError,
+                            data: {
+                                applicant_first_name: row.applicant_first_name,
+                                applicant_last_name: row.applicant_last_name,
+                                applicant_email: row.applicant_email
+                            }
+                        });
+                        results.failedApplications.push({
+                            row: rowNumber,
+                            applicantName: `${row.applicant_first_name || ''} ${row.applicant_last_name || ''}`.trim(),
+                            email: row.applicant_email || 'N/A',
+                            error: enhancedError
+                        });
+                    }
+            }
+
+            // Clean up uploaded file
+            fs.unlinkSync(csvFilePath);
+
+            // Return results
+            res.status(200).json({
+                success: true,
+                message: `CSV import completed. ${results.successful} successful, ${results.failed} failed out of ${results.total} total rows.`,
+                data: results
+            });
+
+        } catch (error) {
+            console.error('Error importing CSV:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to import CSV',
+                error: error.message
+            });
+        }
+    }
+
 }
 
 module.exports = ApplicationController;

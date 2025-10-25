@@ -1,11 +1,7 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, People, Apps, ShowChart } from "@mui/icons-material";
-import { PersonalInformation } from "@/components/PersonalInformation";
 // import '../pages/Dashboard/index.css';
 import Datatable from "@/components/Datatable";
 import { FaUsers, FaFingerprint, FaHourglassHalf, FaCalendarWeek } from 'react-icons/fa';
 import React, { useState, useEffect } from 'react';
-import Link from '@mui/material/Link';
 import IconButton from '@mui/material/IconButton';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -13,7 +9,7 @@ import apiService from '@/services/api';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from 'reactstrap';
-
+import Import from './Import/Import';
 const Application = () => {
   const { token, user } = useSelector((state) => state.auth);
   const [applications, setApplications] = useState([]);
@@ -22,7 +18,8 @@ const Application = () => {
   const [deleteModal, setDeleteModal] = useState(false);
   const [applicationToDelete, setApplicationToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
-
+  const [importModal, setImportModal] = useState(false);
+  const toggleImportModal = () => setImportModal(!importModal);
   // Fetch applications from API
   useEffect(() => {
     const fetchApplications = async () => {
@@ -30,9 +27,9 @@ const Application = () => {
         setLoading(true);
         // Set the token for API requests
         apiService.setToken(token);
-        
+
         const response = await apiService.getAllApplications();
-        
+
         if (response.success) {
           setApplications(response.data || []);
         } else {
@@ -70,10 +67,10 @@ const Application = () => {
 
       if (response.success) {
         // Remove the deleted application from the list
-        setApplications(prev => 
+        setApplications(prev =>
           prev.filter(app => app.id !== applicationToDelete.id)
         );
-        
+
         toast.success(`Application for ${applicationToDelete.applicant_first_name} ${applicationToDelete.applicant_last_name} deleted successfully`);
         setDeleteModal(false);
         setApplicationToDelete(null);
@@ -109,70 +106,70 @@ const Application = () => {
   };
 
   const columns = [
-    { 
-      field: 'applicant_name', 
-      headerName: 'Name', 
-      flex: 1, 
+    {
+      field: 'applicant_name',
+      headerName: 'Name',
+      flex: 1,
       minWidth: 150,
       headerAlign: 'left',
       renderCell: (params) => (
         <div className="datatable-cell-content">
           {`${params.row.applicant_first_name} ${params.row.applicant_last_name}`}
         </div>
-      ) 
+      )
     },
-    { 
-      field: 'applicant_phone', 
-      headerName: 'Contact No.', 
-      flex: 1, 
+    {
+      field: 'applicant_phone',
+      headerName: 'Contact No.',
+      flex: 1,
       minWidth: 120,
       headerAlign: 'left',
       renderCell: (params) => (
         <div className="datatable-cell-content">
           {params.row.applicant_phone || 'N/A'}
         </div>
-      ) 
+      )
     },
-    { 
-      field: 'company_name', 
-      headerName: 'Client', 
-      flex: 1, 
+    {
+      field: 'company_name',
+      headerName: 'Client',
+      flex: 1,
       minWidth: 120,
       headerAlign: 'left',
       renderCell: (params) => (
         <div className="datatable-cell-content">
           {params.row.company_name || 'N/A'}
         </div>
-      ) 
+      )
     },
-    { 
-      field: 'id', 
-      headerName: 'Online ID', 
-      flex: 1, 
+    {
+      field: 'id',
+      headerName: 'Online ID',
+      flex: 1,
       minWidth: 100,
       headerAlign: 'left',
       renderCell: (params) => (
         <div className="datatable-cell-content">
           {params.row.id}
         </div>
-      ) 
+      )
     },
-    { 
-      field: 'created_at', 
-      headerName: 'Applied', 
-      flex: 1, 
+    {
+      field: 'created_at',
+      headerName: 'Applied',
+      flex: 1,
       minWidth: 120,
       headerAlign: 'left',
       renderCell: (params) => (
         <div className="datatable-cell-content">
           {new Date(params.row.created_at).toLocaleDateString()}
         </div>
-      ) 
+      )
     },
-    { 
-      field: 'application_status', 
-      headerName: 'Status', 
-      flex: 1, 
+    {
+      field: 'application_status',
+      headerName: 'Status',
+      flex: 1,
       minWidth: 100,
       headerAlign: 'left',
       renderCell: (params) => (
@@ -181,7 +178,7 @@ const Application = () => {
             {params.row.application_status}
           </span>
         </div>
-      ) 
+      )
     },
     {
       field: 'actions',
@@ -250,10 +247,17 @@ const Application = () => {
         `}
       </style>
       {/* Welcome Header */}
-      <div className="flex flex-col gap-2">
-        <h1 className="dashboard-title" style={{color:"#4F378B"}}>
+      <div className="flex justify-between items-center">
+        <h1 className="dashboard-title" style={{ color: "#4F378B" }}>
           Applications
         </h1>
+        <Button
+          color="primary"
+          className="custom-primary-button"
+          onClick={toggleImportModal}
+        >
+          Import
+        </Button>
       </div>
 
       <div>
@@ -288,9 +292,9 @@ const Application = () => {
               Are you sure you want to delete this application?
             </h5>
             {applicationToDelete && (
-              <div style={{ 
-                backgroundColor: '#f5f5f5', 
-                padding: '16px', 
+              <div style={{
+                backgroundColor: '#f5f5f5',
+                padding: '16px',
                 borderRadius: '8px',
                 marginBottom: '16px'
               }}>
@@ -314,16 +318,16 @@ const Application = () => {
           </div>
         </ModalBody>
         <ModalFooter style={{ justifyContent: 'center', gap: '12px' }}>
-          <Button 
-            color="secondary" 
+          <Button
+            color="secondary"
             onClick={handleDeleteCancel}
             disabled={deleting}
             style={{ minWidth: '100px' }}
           >
             Cancel
           </Button>
-          <Button 
-            color="danger" 
+          <Button
+            color="danger"
             onClick={handleDeleteConfirm}
             disabled={deleting}
             style={{ minWidth: '100px' }}
@@ -332,6 +336,28 @@ const Application = () => {
           </Button>
         </ModalFooter>
       </Modal>
+      <Import 
+        modal={importModal} 
+        toggle={toggleImportModal} 
+        onImportComplete={() => {
+          // Refresh applications list after import
+          const fetchApplications = async () => {
+            try {
+              setLoading(true);
+              apiService.setToken(token);
+              const response = await apiService.getAllApplications();
+              if (response.success) {
+                setApplications(response.data || []);
+              }
+            } catch (err) {
+              console.error('Error fetching applications:', err);
+            } finally {
+              setLoading(false);
+            }
+          };
+          fetchApplications();
+        }}
+      />
     </div>
   );
 };

@@ -7,9 +7,23 @@ const { requireAdmin, requireVerifier } = require('../middleware/roleAuth');
 
 // Configure multer for handling file uploads
 const upload = multer({
-    storage: multer.memoryStorage(),
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+            cb(null, 'uploads/');
+        },
+        filename: (req, file, cb) => {
+            cb(null, `csv_${Date.now()}_${file.originalname}`);
+        }
+    }),
     limits: {
         fileSize: 10 * 1024 * 1024 // 10MB limit
+    },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only CSV files are allowed'), false);
+        }
     }
 });
 
@@ -75,6 +89,20 @@ router.get('/stats/overview',
 router.delete('/:id', 
     requireAdmin, 
     ApplicationController.deleteApplication
+);
+
+// CSV Import/Export routes (Admin only)
+// Generate CSV template for bulk import
+router.get('/companies/:companyId/csv-template', 
+    requireAdmin, 
+    ApplicationController.generateCSVTemplate
+);
+
+// Import applications from CSV
+router.post('/companies/:companyId/import-csv', 
+    requireAdmin,
+    upload.single('csvFile'),
+    ApplicationController.importFromCSV
 );
 
 module.exports = router;

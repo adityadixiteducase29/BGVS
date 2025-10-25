@@ -306,6 +306,19 @@ class Application {
         }
     }
 
+    // Find application by email and company
+    static async findByEmail(email, companyId) {
+        try {
+            const [rows] = await pool.execute(
+                'SELECT * FROM applications WHERE applicant_email = ? AND company_id = ?',
+                [email, companyId]
+            );
+            return rows[0] || null;
+        } catch (error) {
+            throw new Error('Failed to find application by email');
+        }
+    }
+
     // Get all applications for a company
     static async findByCompany(companyId, status = null) {
         try {

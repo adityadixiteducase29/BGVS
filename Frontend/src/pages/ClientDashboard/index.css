@@ -1,7 +1,5 @@
 /* Client Dashboard Styles */
-.space-y-8 > * + * {
-  margin-top: 2rem;
-}
+
 
 .dashboard-title {
   font-size: 2rem;

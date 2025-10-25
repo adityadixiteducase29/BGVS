@@ -176,7 +176,7 @@ class EmployeeController {
     static async updateEmployee(req, res) {
         try {
             const { id } = req.params;
-            const { name, email, assignToCompany } = req.body;
+            const { name, email, password, assignToCompany } = req.body;
 
             // Check if employee exists
             const existingEmployee = await User.findById(id);
@@ -192,11 +192,24 @@ class EmployeeController {
             const firstName = nameParts[0];
             const lastName = nameParts.slice(1).join(' ') || '';
 
-            await pool.execute(`
-                UPDATE users 
-                SET first_name = ?, last_name = ?, email = ?, updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-            `, [firstName, lastName, email, id]);
+            // If password is provided, hash it
+            if (password) {
+                const bcrypt = require('bcrypt');
+                const hashedPassword = await bcrypt.hash(password, 12);
+                
+                await pool.execute(`
+                    UPDATE users 
+                    SET first_name = ?, last_name = ?, email = ?, password = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                `, [firstName, lastName, email, hashedPassword, id]);
+            } else {
+                // Update without changing password
+                await pool.execute(`
+                    UPDATE users 
+                    SET first_name = ?, last_name = ?, email = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                `, [firstName, lastName, email, id]);
+            }
 
             // Update company assignments
             if (assignToCompany) {
