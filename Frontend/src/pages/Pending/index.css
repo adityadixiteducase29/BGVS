@@ -86,11 +86,29 @@
 .datatable-actions {
   display: flex;
   gap: 8px;
+  justify-content: center;
 }
 
 .action-button {
   text-transform: none !important;
   font-weight: 500 !important;
+  background-color: #5570F1 !important;
+  color: white !important;
+  border-radius: 8px !important;
+  padding: 10px 20px !important;
+  box-shadow: 0 2px 4px rgba(85, 112, 241, 0.3) !important;
+  min-height: 36px !important;
+}
+
+.action-button:hover {
+  background-color: #4459d4 !important;
+  box-shadow: 0 4px 8px rgba(85, 112, 241, 0.4) !important;
+}
+
+.action-button.Mui-disabled {
+  background-color: #e5e7ea !important;
+  color: #9ca3af !important;
+  box-shadow: none !important;
 }
 
 /* Responsive adjustments */

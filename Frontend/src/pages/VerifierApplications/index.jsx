@@ -147,35 +147,36 @@ const VerifierApplications = () => {
         </div>
       ) 
     },
-    { 
-      field: 'priority', 
-      headerName: 'Priority', 
-      flex: 1, 
-      minWidth: 100,
-      headerAlign: 'left',
-      renderCell: (data) => {
-        const getPriorityColor = (priority) => {
-          switch (priority.toLowerCase()) {
-            case 'high':
-              return 'red';
-            case 'medium':
-              return 'orange';
-            case 'low':
-              return 'green';
-            default:
-              return 'gray';
-          }
-        };
+    // { 
+    //   field: 'priority', 
+    //   headerName: 'Priority', 
+    //   flex: 1, 
+    //   minWidth: 100,
+    //   headerAlign: 'center',
+    //   align: 'center',
+    //   renderCell: (data) => {
+    //     const getPriorityColor = (priority) => {
+    //       switch (priority.toLowerCase()) {
+    //         case 'high':
+    //           return 'red';
+    //         case 'medium':
+    //           return 'orange';
+    //         case 'low':
+    //           return 'green';
+    //         default:
+    //           return 'gray';
+    //       }
+    //     };
         
-        const priorityColor = getPriorityColor(data.row.priority);
+    //     const priorityColor = getPriorityColor(data.row.priority);
         
-        return (
-          <div className={`datatable-priority datatable-priority-${priorityColor}`}>
-            {data.row.priority}
-          </div>
-        );
-      } 
-    },
+    //     return (
+    //       <div className={`datatable-cell-content datatable-priority datatable-priority-${priorityColor}`}>
+    //         {data.row.priority}
+    //       </div>
+    //     );
+    //   } 
+    // },
     { 
       field: 'status', 
       headerName: 'Status', 
@@ -218,15 +219,14 @@ const VerifierApplications = () => {
         
         return (
           <div className="datatable-actions">
-            <Button 
-              variant="outlined" 
-              size="small"
-              className="action-button"
+            <ButtonStrap 
+              color="primary"
+              className='custom-primary-button'
               disabled={shouldDisable}
               onClick={() => handleReviewClick(application.id)}
             >
-              {shouldDisable ? 'Assigned' : 'Review'}
-            </Button>
+              {shouldDisable ? 'Assigned' : 'Start Review'}
+            </ButtonStrap>
           </div>
         );
       } 

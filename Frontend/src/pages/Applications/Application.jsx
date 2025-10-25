@@ -1,4 +1,4 @@
-// import '../pages/Dashboard/index.css';
+import './index.css';
 import Datatable from "@/components/Datatable";
 import { FaUsers, FaFingerprint, FaHourglassHalf, FaCalendarWeek } from 'react-icons/fa';
 import React, { useState, useEffect } from 'react';
@@ -215,37 +215,6 @@ const Application = () => {
 
   return (
     <div className="space-y-8">
-      <style>
-        {`
-          .status-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-            text-transform: capitalize;
-          }
-          .status-pending {
-            background-color: #fef3c7;
-            color: #92400e;
-          }
-          .status-assigned {
-            background-color: #dbeafe;
-            color: #1e40af;
-          }
-          .status-under_review {
-            background-color: #fef3c7;
-            color: #92400e;
-          }
-          .status-approved {
-            background-color: #d1fae5;
-            color: #065f46;
-          }
-          .status-rejected {
-            background-color: #fee2e2;
-            color: #991b1b;
-          }
-        `}
-      </style>
       {/* Welcome Header */}
       <div className="flex justify-between items-center">
         <h1 className="dashboard-title" style={{ color: "#4F378B" }}>
