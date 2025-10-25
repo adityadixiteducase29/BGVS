@@ -45,11 +45,11 @@
 }
 
 .import-modal .modal-header {
-  background: linear-gradient(135deg, #1976d2, #1565c0);
-  color: white;
+  background: hsl(var(--primary)) !important;
   border-radius: 12px 12px 0 0;
   padding: 20px 24px;
   border-bottom: none;
+  color: white !important;
 }
 
 .import-modal .modal-title {
@@ -93,18 +93,9 @@
 }
 
 .step-indicator .step.active {
-  background: #1976d2;
+  background: hsl(var(--primary)) !important;
   color: white;
   transform: scale(1.1);
-}
-
-.step-indicator .step:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  width: 16px;
-  height: 2px;
-  background: #e0e0e0;
-  margin-left: 8px;
 }
 
 .step-indicator .step.active:not(:last-child)::after {
@@ -156,7 +147,7 @@
 
 /* Generate Button */
 .generate-btn {
-  background: linear-gradient(135deg, #1976d2, #1565c0);
+  background: hsl(var(--primary)) !important;
   border: none;
   padding: 12px 24px;
   border-radius: 8px;
@@ -193,7 +184,7 @@
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  border: 2px dashed #1976d2;
+  border: 2px dashed #4d0c9c;
   border-radius: 12px;
   background: #f8f9ff;
   cursor: pointer;
@@ -203,7 +194,7 @@
 
 .file-upload-label:hover {
   background: #e3f2fd;
-  border-color: #1565c0;
+  border-color: #4d0c9c;
 }
 
 .file-upload-label span {
@@ -264,7 +255,7 @@
 }
 
 .import-progress .progress-bar {
-  background: linear-gradient(90deg, #1976d2, #42a5f5);
+  background: hsl(var(--primary)) !important;
   border-radius: 4px;
 }
 

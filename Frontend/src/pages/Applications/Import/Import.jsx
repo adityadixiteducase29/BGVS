@@ -246,9 +246,6 @@ const Import = ({ modal, toggle, onImportComplete }) => {
 
   const renderStep2 = () => (
     <div className="import-step">
-      <div className="step-icon">
-        <Upload size={48} color="#1976d2" />
-      </div>
       <h4>Upload CSV File</h4>
       <p>Select the CSV file you want to import. Make sure it follows the template format.</p>
       
@@ -303,6 +300,7 @@ const Import = ({ modal, toggle, onImportComplete }) => {
         </Button>
         <Button 
           color="primary" 
+          className='custom-primary-button'
           onClick={handleImport}
           disabled={!selectedFile || loading}
         >
@@ -345,7 +343,7 @@ const Import = ({ modal, toggle, onImportComplete }) => {
 
   const renderStep4 = () => (
     <div className="import-step">
-      <div className="step-icon">
+      <div className="step-icon d-flex justify-content-center align-items-center">
         {importResults?.failed === 0 ? (
           <CheckCircle size={48} color="#4caf50" />
         ) : (
@@ -394,6 +392,7 @@ const Import = ({ modal, toggle, onImportComplete }) => {
         <Button 
           color="primary" 
           onClick={handleClose}
+          className='custom-primary-button'
         >
           Done
         </Button>
