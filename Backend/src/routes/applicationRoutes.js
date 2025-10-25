@@ -6,15 +6,9 @@ const { authenticate } = require('../middleware/authenticate');
 const { requireAdmin, requireVerifier } = require('../middleware/roleAuth');
 
 // Configure multer for handling file uploads
+// Use memory storage for serverless deployments
 const upload = multer({
-    storage: multer.diskStorage({
-        destination: (req, file, cb) => {
-            cb(null, 'uploads/');
-        },
-        filename: (req, file, cb) => {
-            cb(null, `csv_${Date.now()}_${file.originalname}`);
-        }
-    }),
+    storage: multer.memoryStorage(), // Store in memory instead of disk for serverless
     limits: {
         fileSize: 10 * 1024 * 1024 // 10MB limit
     },

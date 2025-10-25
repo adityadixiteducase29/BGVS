@@ -647,7 +647,6 @@ class ApplicationController {
                 });
             }
 
-            const csvFilePath = req.file.path;
             const results = {
                 total: 0,
                 successful: 0,
@@ -657,10 +656,17 @@ class ApplicationController {
                 failedApplications: []
             };
 
-            // Parse CSV file
+            // Parse CSV file from buffer (memory storage)
             const applications = [];
             await new Promise((resolve, reject) => {
-                fs.createReadStream(csvFilePath)
+                const { Readable } = require('stream');
+                
+                // Create a readable stream from the buffer
+                const bufferStream = new Readable();
+                bufferStream.push(req.file.buffer);
+                bufferStream.push(null);
+                
+                bufferStream
                     .pipe(csv())
                     .on('data', (row) => {
                         // Clean row keys to remove asterisks from headers
@@ -930,8 +936,8 @@ class ApplicationController {
                     }
             }
 
-            // Clean up uploaded file
-            fs.unlinkSync(csvFilePath);
+            // Note: No file cleanup needed with memory storage
+            // File is automatically garbage collected after request completes
 
             // Return results
             res.status(200).json({
