@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => ({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://bgvs-backend.vercel.app',
+        target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false
       }

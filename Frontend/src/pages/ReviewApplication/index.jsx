@@ -390,8 +390,6 @@ const ReviewApplication = () => {
     return isEnabled;
   }) : allSteps; // Show all steps if services are not loaded yet
 
-  console.log('Filtered steps:', steps);
-
   // Fetch application data on component mount
   useEffect(() => {
     if (applicationId) {

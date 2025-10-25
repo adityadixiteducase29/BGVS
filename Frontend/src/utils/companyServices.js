@@ -44,8 +44,8 @@ export const getCompanyServices = async (companyId) => {
     }
     
     const result = await response.json();
-    console.log('API Response:', result);
-    console.log('Services data:', result.data.services);
+    // console.log('API Response:', result);
+    // console.log('Services data:', result.data.services);
     return result.data.services;
   } catch (error) {
     console.error('Error fetching company services:', error);
@@ -195,15 +195,15 @@ export const useCompanyServices = (companyId) => {
       try {
         setLoading(true);
         setError(null);
-        console.log('Starting to fetch services for companyId:', companyId);
+        // console.log('Starting to fetch services for companyId:', companyId);
         const companyServices = await getCompanyServices(companyId);
-        console.log('useCompanyServices Debug:', {
-          companyId,
-          companyServices,
-          type: typeof companyServices,
-          isObject: typeof companyServices === 'object',
-          keys: companyServices ? Object.keys(companyServices) : 'no keys'
-        });
+        // console.log('useCompanyServices Debug:', {
+        //   companyId,
+        //   companyServices,
+        //   type: typeof companyServices,
+        //   isObject: typeof companyServices === 'object',
+        //   keys: companyServices ? Object.keys(companyServices) : 'no keys'
+        // });
         setServices(companyServices || {});
       } catch (err) {
         console.error('useCompanyServices Error:', err);

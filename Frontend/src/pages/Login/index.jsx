@@ -150,7 +150,7 @@ const Login = () => {
               )}
 
               {/* Development Test Buttons */}
-              {process.env.NODE_ENV === 'development' && (
+              {true && (
                 <div className="mb-3">
                   <small className="text-muted">Test Credentials:</small>
                   <div className="mt-2">

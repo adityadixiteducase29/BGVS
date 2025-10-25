@@ -12,6 +12,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { PlusCircle } from 'lucide-react';
 import { Button } from "reactstrap";
 import AddClient from "./AddClient/AddClient";
+import EditClient from "./EditClient/EditClient";
 import { useAppSelector } from '@/store/hooks';
 import apiService from '@/services/api';
 import { toast } from 'react-toastify';
@@ -27,8 +28,12 @@ const Client = () => {
   const [deleteModal, setDeleteModal] = useState(false);
   const [clientToDelete, setClientToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [editModal, setEditModal] = useState(false);
+  const [clientId, setClientId] = useState(null);
+  const [editing, setEditing] = useState(false);
 
   const toggle = () => setModal(!modal);
+  const toggleEdit = () => setEditModal(!editModal);
 
   // Fetch clients from API
   const fetchClients = async () => {
@@ -71,9 +76,15 @@ const Client = () => {
     toggle();
   };
 
+  // Refresh clients after updating one
+  const handleClientUpdated = () => {
+    fetchClients();
+    toggleEdit();
+  };
+
   const handleEditClick = (row) => {
-    console.log('Edit clicked for row:', row);
-    // Add your edit logic here
+    setEditModal(true);
+    setClientId(row.id);
   };
 
   const handleDeleteClick = (client) => {
@@ -342,6 +353,7 @@ const Client = () => {
         />
       </div>
       <AddClient modal={modal} toggle={toggle} onClientAdded={handleClientAdded} />
+      <EditClient modal={editModal} toggle={toggleEdit} clientId={clientId} onClientUpdated={handleClientUpdated} />
 
       {/* Delete Confirmation Modal */}
       <Modal isOpen={deleteModal} toggle={handleDeleteCancel} centered>

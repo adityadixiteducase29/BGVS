@@ -108,15 +108,16 @@ class CompanyController {
             const { id } = req.params;
             const updateData = req.body;
 
-            const company = await Company.findById(id);
-            if (!company) {
+            const companyData = await Company.findById(id);
+            if (!companyData) {
                 return res.status(404).json({
                     success: false,
                     message: 'Company not found'
                 });
             }
 
-            // Update company fields
+            // Create a Company instance and update fields
+            const company = new Company(companyData);
             Object.assign(company, updateData);
             await company.update();
 

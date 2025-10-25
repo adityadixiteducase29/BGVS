@@ -5,6 +5,7 @@ const config = require('../config/environment');
 
 class Company {
     constructor(companyData) {
+        this.id = companyData.id;
         this.name = companyData.name;
         this.email = companyData.email;
         this.password = companyData.password;
@@ -87,7 +88,9 @@ class Company {
         try {
             const [rows] = await pool.execute(`
                 SELECT DISTINCT
-                    c.*,
+                    c.id, c.name, c.email, c.industry, c.address, c.contact_person, 
+                    c.contact_phone, c.verification_form_link, c.is_active, c.created_by, 
+                    c.created_at, c.updated_at,
                     GROUP_CONCAT(
                         CASE WHEN cs.is_enabled = 1 THEN cs.service_name END
                         SEPARATOR ','
@@ -183,14 +186,20 @@ class Company {
     // Update company
     async update() {
         try {
+            // Handle password hashing if password is provided
+            let hashedPassword = this.password;
+            if (this.password && !this.password.startsWith('$2a$')) {
+                hashedPassword = await bcrypt.hash(this.password, 12);
+            }
+
             const [result] = await pool.execute(
                 `UPDATE companies SET 
-                    name = ?, email = ?, industry = ?, address = ?, 
+                    name = ?, email = ?, password = ?, industry = ?, address = ?, 
                     contact_person = ?, contact_phone = ?, verification_form_link = ?, 
                     is_active = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?`,
                 [
-                    this.name, this.email, this.industry, this.address,
+                    this.name, this.email, hashedPassword, this.industry, this.address,
                     this.contact_person, this.contact_phone, this.verification_form_link,
                     this.is_active, this.id
                 ]
@@ -198,6 +207,7 @@ class Company {
             
             return result.affectedRows > 0;
         } catch (error) {
+            console.error('Company update error:', error);
             throw new Error('Failed to update company');
         }
     }

@@ -164,17 +164,8 @@ const UserForm = () => {
     house_owner_address: '',
     residing: ''
   })
-  console.log(formData, "formData")
   // Use the company services hook to get enabled services
-  const { companyServices, loading: servicesLoading, error: servicesError } = useCompanyServices(companyId)
-
-  // Debug logging
-  console.log('UserForm Debug:', {
-    companyId,
-    companyServices,
-    servicesLoading,
-    servicesError
-  });
+  const { services: companyServices, loading: servicesLoading, error: servicesError } = useCompanyServices(companyId)
 
   // All possible steps
   const allSteps = [
@@ -191,11 +182,9 @@ const UserForm = () => {
   // If companyServices is undefined, show all steps temporarily for debugging
   const steps = companyServices ? allSteps.filter(step => {
     const isEnabled = companyServices[step.serviceKey] === true;
-    console.log(`Step ${step.title} (${step.serviceKey}):`, isEnabled);
     return isEnabled;
   }) : allSteps; // Show all steps if services are not loaded yet
 
-  console.log('Filtered steps:', steps);
 
   useEffect(() => {
     if (!servicesLoading && !servicesError) {
@@ -218,7 +207,6 @@ const UserForm = () => {
       ...newData
     }))
   }
-
   // Function to handle form submission
   const handleSubmit = async () => {
     try {

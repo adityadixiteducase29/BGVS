@@ -169,7 +169,7 @@ class Client {
             return rows.map(client => ({
                 ...client,
                 enabled_services: client.enabled_services ? client.enabled_services.split(',') : [],
-                company_link: `https://bgvs-frontend.vercel.app/user-form/${client.id}`,
+                company_link: `${config.frontendUrl}/user-form/${client.id}`,
                 created_at: new Date(client.created_at).toISOString(),
                 updated_at: new Date(client.updated_at).toISOString()
             }));
