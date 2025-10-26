@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
+const Logger = require('./utils/logger');
 
 const config = require('./config/environment');
 const { testConnection } = require('./config/database');
@@ -32,6 +33,14 @@ if (config.nodeEnv === 'development') {
     app.use(morgan('dev'));
 } else {
     app.use(morgan('combined'));
+    app.use((req, res, next) => {
+        const start = Date.now();
+        res.on('finish', () => {
+            const duration = Date.now() - start;
+            Logger.logRequest(req, res, duration);
+        });
+        next();
+    });
 }
 
 // Body parsing middleware - Handle both JSON and FormData
