@@ -3,7 +3,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
-const Logger = require('./utils/logger');
 
 const config = require('./config/environment');
 const { testConnection } = require('./config/database');
@@ -29,19 +28,7 @@ app.use(cors(config.cors));
 app.options('*', cors(config.cors));
 
 // Logging middleware
-if (config.nodeEnv === 'development') {
-    app.use(morgan('dev'));
-} else {
-    app.use(morgan('combined'));
-    app.use((req, res, next) => {
-        const start = Date.now();
-        res.on('finish', () => {
-            const duration = Date.now() - start;
-            Logger.logRequest(req, res, duration);
-        });
-        next();
-    });
-}
+app.use(morgan(config.nodeEnv === 'development' ? 'dev' : 'combined'));
 
 // Body parsing middleware - Handle both JSON and FormData
 app.use(express.json({ limit: '10mb' }));
@@ -98,6 +85,16 @@ app.use('*', (req, res) => {
 app.use((error, req, res, next) => {
     console.error('Global error handler:', error);
     
+    // Log error to file using Logger (import it here to avoid circular dependencies)
+    const Logger = require('./utils/logger');
+    Logger.logError(error, {
+        req,
+        res,
+        method: req.method,
+        url: req.originalUrl || req.url,
+        statusCode: error.status || 500,
+    });
+    
     res.status(error.status || 500).json({
         success: false,
         message: error.message || 'Internal server error',
@@ -121,10 +118,22 @@ const initializeApp = async () => {
             console.log(`🌍 Environment: ${config.nodeEnv}`);
             console.log(`📊 Health check: http://localhost:${config.port}/health`);
             console.log(`🔧 CORS enabled for: ${JSON.stringify(config.cors.origin)}`);
+            
+            // Log server start to file
+            const Logger = require('./utils/logger');
+            Logger.logInfo('Server started successfully', {
+                port: config.port,
+                environment: config.nodeEnv,
+            });
+            
+            // Cleanup old logs on startup
+            Logger.cleanupOldLogs(30);
         });
 
         // Graceful shutdown
         process.on('SIGTERM', () => {
+            const Logger = require('./utils/logger');
+            Logger.logInfo('SIGTERM received. Shutting down gracefully...');
             console.log('SIGTERM received. Shutting down gracefully...');
             server.close(() => {
                 console.log('Process terminated');
@@ -132,6 +141,8 @@ const initializeApp = async () => {
         });
 
         process.on('SIGINT', () => {
+            const Logger = require('./utils/logger');
+            Logger.logInfo('SIGINT received. Shutting down gracefully...');
             console.log('SIGINT received. Shutting down gracefully...');
             server.close(() => {
                 console.log('Process terminated');
