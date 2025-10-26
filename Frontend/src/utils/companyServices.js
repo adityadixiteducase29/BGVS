@@ -1,4 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
+import apiService from '../services/api';
+
+// Get base URL from apiService
+const getBaseURL = () => apiService.baseURL;
 
 // Utility functions for checking client services and controlling UserForm visibility
 
@@ -10,7 +14,7 @@ import { useState, useEffect, useCallback } from 'react';
  */
 export const isServiceEnabled = async (companyId, serviceName) => {
   try {
-    const response = await fetch(`/api/companies/${companyId}/services/${serviceName}/status`);
+    const response = await fetch(`${getBaseURL()}/companies/${companyId}/services/${serviceName}/status`);
     if (!response.ok) {
       throw new Error('Failed to check service status');
     }
@@ -31,7 +35,7 @@ export const isServiceEnabled = async (companyId, serviceName) => {
 export const getCompanyServices = async (companyId) => {
   try {
     console.log('Fetching company services for companyId:', companyId);
-    const response = await fetch(`/api/companies/${companyId}/services/visibility?t=${Date.now()}`, {
+    const response = await fetch(`${getBaseURL()}/companies/${companyId}/services/visibility?t=${Date.now()}`, {
       headers: {
         'Cache-Control': 'no-cache',
         'Pragma': 'no-cache'
