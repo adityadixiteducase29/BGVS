@@ -6,6 +6,7 @@ const path = require('path');
 
 const config = require('./config/environment');
 const { testConnection } = require('./config/database');
+const Logger = require('./utils/logger');
 
 // Import routes
 const userRoutes = require('./routes/userRoutes');
@@ -32,6 +33,16 @@ if (config.nodeEnv === 'development') {
     app.use(morgan('dev'));
 } else {
     app.use(morgan('combined'));
+    
+    // Custom request logging in production
+    app.use((req, res, next) => {
+        const start = Date.now();
+        res.on('finish', () => {
+            const duration = Date.now() - start;
+            Logger.logRequest(req, res, duration);
+        });
+        next();
+    });
 }
 
 // Body parsing middleware - Handle both JSON and FormData
@@ -89,6 +100,15 @@ app.use('*', (req, res) => {
 app.use((error, req, res, next) => {
     console.error('Global error handler:', error);
     
+    // Log error to file
+    Logger.logError(error, {
+        req,
+        res,
+        method: req.method,
+        url: req.originalUrl || req.url,
+        statusCode: error.status || 500,
+    });
+    
     res.status(error.status || 500).json({
         success: false,
         message: error.message || 'Internal server error',
@@ -112,6 +132,15 @@ const initializeApp = async () => {
             console.log(`🌍 Environment: ${config.nodeEnv}`);
             console.log(`📊 Health check: http://localhost:${config.port}/health`);
             console.log(`🔧 CORS enabled for: ${JSON.stringify(config.cors.origin)}`);
+            
+            // Log server start
+            Logger.logInfo('Server started successfully', {
+                port: config.port,
+                environment: config.nodeEnv,
+            });
+            
+            // Cleanup old logs on startup
+            Logger.cleanupOldLogs(30);
         });
 
         // Graceful shutdown
