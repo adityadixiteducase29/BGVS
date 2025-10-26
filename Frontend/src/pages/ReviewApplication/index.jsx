@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import {
   Stepper,
   Step,
@@ -30,6 +30,7 @@ import { toast } from 'react-toastify'
 // import Logo from "../../assets/Logo.svg"
 const ReviewApplication = () => {
   const { id: applicationId } = useParams()
+  const navigate = useNavigate()
   const [activeStep, setActiveStep] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -343,8 +344,10 @@ const ReviewApplication = () => {
         
         if (finalizeResult.success) {
           toast.success('Application review finalized successfully');
-          // Refresh review data
-          await fetchApplicationData();
+          // Navigate to verifier applications page on success
+          setTimeout(() => {
+            navigate('/verifier-applications');
+          }, 1000); // Small delay to show success message
         } else {
           toast.error(finalizeResult.message || 'Failed to finalize review');
         }

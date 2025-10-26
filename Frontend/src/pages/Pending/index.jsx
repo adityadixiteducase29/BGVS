@@ -255,7 +255,7 @@ const Pending = () => {
         <p className="text-gray-600">Review applications waiting for verification</p>
       </div>
       
-      {/* Search and Filter Bar */}
+      {/* Search and Filter Bar
       <div className="search-filter-bar">
         <Row className="g-3 align-items-center">
           <Col className="col-12 col-md-6">
@@ -284,7 +284,7 @@ const Pending = () => {
             </div>
           </Col>
         </Row>
-      </div>
+      </div> */}
       
       {/* Pending Applications Table */}
       <div>

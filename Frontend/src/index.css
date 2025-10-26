@@ -322,3 +322,46 @@ All colors MUST be HSL.
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
 }
 
+/* Status Badge Styles - Reusable across the application */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.status-badge.approved {
+  background-color: #D1FAE5;
+  color: #065F46;
+}
+
+.status-badge.pending {
+  background-color: #FEF3C7;
+  color: #92400E;
+}
+
+.status-badge.rejected {
+  background-color: #FEE2E2;
+  color: #991B1B;
+}
+
+.status-badge.in-progress {
+  background-color: #DBEAFE;
+  color: #1E40AF;
+}
+
+.status-badge.completed {
+  background-color: #D1FAE5;
+  color: #065F46;
+}
+
+.status-badge.default {
+  background-color: #F3F4F6;
+  color: #4B5563;
+}
+

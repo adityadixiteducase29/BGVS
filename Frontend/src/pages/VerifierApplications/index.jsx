@@ -244,7 +244,7 @@ const VerifierApplications = () => {
       </div>
       
       {/* Search and Filter Bar */}
-      <div className="search-filter-bar">
+      {/* <div className="search-filter-bar">
         <Row className="g-3 align-items-center">
           <Col className="col-12 col-md-6">
             <div className="search-container">
@@ -272,7 +272,7 @@ const VerifierApplications = () => {
             </div>
           </Col>
         </Row>
-      </div>
+      </div> */}
       
       {/* Applications Table */}
       <div>

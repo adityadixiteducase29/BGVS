@@ -30,7 +30,7 @@ const Approved = () => {
   const navigate = useNavigate();
 
   const toggle = () => setModal(!modal);
-  
+
   // Get current user from Redux store
   const user = useSelector(state => state.auth.user);
 
@@ -42,7 +42,7 @@ const Approved = () => {
       if (!token) return;
 
       apiService.setToken(token);
-      
+
       // Fetch approved applications
       const approvedResponse = await apiService.getVerifierApprovedApplications();
 
@@ -85,98 +85,97 @@ const Approved = () => {
   };
 
   const columns = [
-    { 
-      field: 'applicationId', 
-      headerName: 'Application ID', 
-      flex: 1, 
+    {
+      field: 'applicationId',
+      headerName: 'Application ID',
+      flex: 1,
       minWidth: 120,
       headerAlign: 'left',
       renderCell: (data) => (
         <div className="datatable-cell-content">
           {data.row.id}
         </div>
-      ) 
+      )
     },
-    { 
-      field: 'applicantName', 
-      headerName: 'Applicant Name', 
-      flex: 1, 
+    {
+      field: 'applicantName',
+      headerName: 'Applicant Name',
+      flex: 1,
       minWidth: 150,
       headerAlign: 'left',
       renderCell: (data) => (
         <div className="datatable-cell-content">
           {data.row.applicantName}
         </div>
-      ) 
+      )
     },
-    { 
-      field: 'documentType', 
-      headerName: 'Document Type', 
-      flex: 1, 
-      minWidth: 120,
+    {
+      field: 'documentType',
+      headerName: 'Document Type',
+      flex: 1,
+      minWidth: 150,
       headerAlign: 'left',
       renderCell: (data) => (
         <div className="datatable-cell-content">
           {data.row.documentType}
         </div>
-      ) 
+      )
     },
-    { 
-      field: 'approvedDate', 
-      headerName: 'Approved Date', 
-      flex: 1, 
-      minWidth: 160,
+    {
+      field: 'approvedDate',
+      headerName: 'Approved Date',
+      flex: 1,
+      minWidth: 170,
       headerAlign: 'left',
       renderCell: (data) => (
         <div className="datatable-cell-content">
           {data.row.reviewedDate || '-'}
         </div>
-      ) 
+      )
     },
-    { 
-      field: 'approvedBy', 
-      headerName: 'Approved By', 
-      flex: 1, 
+    {
+      field: 'approvedBy',
+      headerName: 'Approved By',
+      flex: 1,
       minWidth: 140,
       headerAlign: 'left',
       renderCell: (data) => (
         <div className="datatable-cell-content">
           {data.row.assigned_verifier_name || '-'}
         </div>
-      ) 
+      )
     },
-    { 
-      field: 'status', 
-      headerName: 'Status', 
-      flex: 1, 
+    {
+      field: 'status',
+      headerName: 'Status',
       minWidth: 120,
       headerAlign: 'left',
       renderCell: (data) => (
-        <div className="datatable-cell-content">
-          {data.row.status}
-        </div>
-      ) 
+        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', justifyContent: 'flex-start' }}>
+          <span className={`status-badge ${data.row.status?.toLowerCase() || 'default'}`} style={{ height:"31px", borderRadius:"4px"}}>
+            {data.row.status || '-'}
+          </span>
+        </Box>
+      )
     },
-    { 
-      field: 'actions', 
-      headerName: 'Actions', 
-      flex: 1, 
-      minWidth: 120,
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 240,
       headerAlign: 'left',
       sortable: false,
       renderCell: (data) => (
-        <div className="datatable-actions">
-          <Button 
-            variant="outlined" 
-            size="small"
-            className="action-button"
+        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', justifyContent: 'flex-start' }}>
+          <Button
+            variant="contained"
+            className='custom-primary-button'
             startIcon={<CheckCircle />}
             onClick={() => handleViewClick(data.row.id)}
           >
             View Details
           </Button>
-        </div>
-      ) 
+        </Box>
+      )
     }
   ];
 
@@ -189,9 +188,9 @@ const Approved = () => {
         </h1>
         <p className="text-gray-600">View successfully verified applications</p>
       </div>
-      
+
       {/* Search and Filter Bar */}
-      <div className="search-filter-bar">
+      {/* <div className="search-filter-bar">
         <Row className="g-3 align-items-center">
           <Col className="col-12 col-md-6">
             <div className="search-container">
@@ -219,8 +218,8 @@ const Approved = () => {
             </div>
           </Col>
         </Row>
-      </div>
-      
+      </div> */}
+
       {/* Approved Applications Table */}
       <div>
         <Datatable
@@ -229,7 +228,7 @@ const Approved = () => {
           pageSize={10}
         />
       </div>
-      
+
       <Modal isOpen={modal} toggle={toggle}>
         <ModalHeader toggle={toggle}>Application Details</ModalHeader>
         <ModalBody>
