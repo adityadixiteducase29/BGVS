@@ -35,6 +35,16 @@ router.get('/companies/:companyId/applications',
     ApplicationController.getCompanyApplications
 );
 
+// Get application statistics (Admin only) - Must be before /:id route
+router.get('/stats/overview', 
+    requireAdmin, 
+    ApplicationController.getApplicationStats
+);
+
+// Get basic applicant details (Admin and Verifier) - Must be before /:id route
+router.get('/:id/basic-details', 
+    ApplicationController.getApplicationBasicDetails
+);
 // Protected routes (require authentication)
 router.use(authenticate);
 

@@ -193,7 +193,47 @@ class ApplicationController {
             });
         }
     }
-
+        // Get basic applicant details (name, email, phone, address)
+        static async getApplicationBasicDetails(req, res) {
+            try {
+                const { id } = req.params;
+                const application = await Application.findById(id);
+    
+                if (!application) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Application not found'
+                    });
+                }
+    
+                // Extract only basic details
+                const basicDetails = {
+                    id: application.id,
+                    applicant_first_name: application.applicant_first_name || '',
+                    applicant_last_name: application.applicant_last_name || '',
+                    applicant_email: application.applicant_email || '',
+                    applicant_phone: application.applicant_phone || '',
+                    applicant_address: application.applicant_address || '',
+                    // Also include current address if available
+                    current_address: application.current_address || '',
+                    // Full name for convenience
+                    full_name: `${application.applicant_first_name || ''} ${application.applicant_last_name || ''}`.trim()
+                };
+    
+                res.status(200).json({
+                    success: true,
+                    data: basicDetails
+                });
+    
+            } catch (error) {
+                console.error('Error fetching application basic details:', error);
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal server error',
+                    error: error.message
+                });
+            }
+        }
     // Assign application to verifier
     static async assignToVerifier(req, res) {
         try {

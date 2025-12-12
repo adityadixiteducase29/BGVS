@@ -407,7 +407,17 @@ class ApiService {
             };
         }
     }
-
+    async getApplicationBasicDetails(id) {
+        try {
+            return await this.request(`/applications/${id}/basic-details`);
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message || 'Failed to fetch application basic details',
+                error: error
+            };
+        }
+    }
     async deleteApplication(id) {
         try {
             return await this.request(`/applications/${id}`, {

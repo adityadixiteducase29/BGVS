@@ -172,7 +172,7 @@ const ReviewApplication = () => {
   const [fileReviews, setFileReviews] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
-  
+  const [basicDetails, setBasicDetails] = useState(null);
   console.log(formData, "formData")
   console.log(reviewData, "reviewData")
   // Fetch application data
@@ -189,6 +189,13 @@ const ReviewApplication = () => {
       
       const response = await apiService.getApplicationDetails(applicationId);
       const getReviewData = await apiService.getReview(applicationId);
+      const basicDetailsResponse = await apiService.getApplicationBasicDetails(applicationId);
+      if (basicDetailsResponse.success) {
+        setBasicDetails(basicDetailsResponse.data);
+      } else {
+        setError(basicDetailsResponse.message || 'Failed to fetch application basic details');
+        toast.error(basicDetailsResponse.message || 'Failed to fetch application basic details');
+      }
       if (getReviewData.success) {
         setReviewData(getReviewData.data);
         
@@ -644,6 +651,62 @@ const ReviewApplication = () => {
                     </Step>
                   ))}
                 </Stepper>
+              </CardContent>
+            </Paper>
+            <Paper className='mt-3' elevation={1} sx={{ borderRadius: 3, border: '1px solid #E5E7EA' }}>
+              <CardHeader
+                title={
+                  <Typography variant="h5" sx={{ fontWeight: 500, color: '#4A4458' }}>
+                    Applicant Details
+                  </Typography>
+                }
+                sx={{ pb: 1 }}
+              />
+              <Divider sx={{ mb: 2 }} />
+              <CardContent sx={{ pt: 0 }}>
+                {basicDetails ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: '#9EA5AD', fontSize: '0.75rem', fontWeight: 500 }}>
+                        Full Name
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: '#3C2D63', fontWeight: 500, mt: 0.5 }}>
+                        {basicDetails.full_name || `${basicDetails.applicant_first_name} ${basicDetails.applicant_last_name}`.trim() || 'N/A'}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: '#9EA5AD', fontSize: '0.75rem', fontWeight: 500 }}>
+                        Email
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: '#3C2D63', mt: 0.5 }}>
+                        {basicDetails.applicant_email || 'N/A'}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: '#9EA5AD', fontSize: '0.75rem', fontWeight: 500 }}>
+                        Phone
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: '#3C2D63', mt: 0.5 }}>
+                        {basicDetails.applicant_phone || 'N/A'}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: '#9EA5AD', fontSize: '0.75rem', fontWeight: 500 }}>
+                        Address
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#3C2D63', mt: 0.5 }}>
+                        {basicDetails.applicant_address || basicDetails.current_address || 'N/A'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 2 }}>
+                    <CircularProgress size={24} />
+                    <Typography variant="body2" sx={{ color: '#9EA5AD', mt: 1 }}>
+                      Loading applicant details...
+                    </Typography>
+                  </Box>
+                )}
               </CardContent>
             </Paper>
           </Box>
