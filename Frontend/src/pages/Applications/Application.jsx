@@ -10,6 +10,8 @@ import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from 'reactstrap';
 import Import from './Import/Import';
+import EditApplication from './EditApplication';
+
 const Application = () => {
   const { token, user } = useSelector((state) => state.auth);
   const [applications, setApplications] = useState([]);
@@ -19,7 +21,10 @@ const Application = () => {
   const [applicationToDelete, setApplicationToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [importModal, setImportModal] = useState(false);
+  const [editModal, setEditModal] = useState(false);
+  const [applicationToEdit, setApplicationToEdit] = useState(null);
   const toggleImportModal = () => setImportModal(!importModal);
+  const toggleEditModal = () => setEditModal(!editModal);
   // Fetch applications from API
   useEffect(() => {
     const fetchApplications = async () => {
@@ -49,8 +54,27 @@ const Application = () => {
   }, [token]);
 
   const handleEditClick = (row) => {
-    console.log('Edit clicked for row:', row);
-    // Add your edit logic here
+    setApplicationToEdit(row);
+    setEditModal(true);
+  };
+
+  const handleEditComplete = () => {
+    // Refresh applications list after edit
+    const fetchApplications = async () => {
+      try {
+        setLoading(true);
+        apiService.setToken(token);
+        const response = await apiService.getAllApplications();
+        if (response.success) {
+          setApplications(response.data || []);
+        }
+      } catch (err) {
+        console.error('Error fetching applications:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchApplications();
   };
 
   const handleDeleteClick = (row) => {
@@ -190,23 +214,25 @@ const Application = () => {
       sortable: false,
       renderCell: (params) => (
         <div className="datatable-cell-content" style={{ justifyContent: 'center', gap: '8px' }}>
-          {/* <IconButton
-            size="small"
-            onClick={() => handleEditClick(params.row)}
-            title="Edit Application"
-            style={{ color: '#1976d2' }}
-          >
-            <EditOutlinedIcon fontSize="small" />
-          </IconButton> */}
           {user?.user_type === 'admin' && (
-            <IconButton
-              size="small"
-              onClick={() => handleDeleteClick(params.row)}
-              title="Delete Application"
-              style={{ color: '#d32f2f' }}
-            >
-              <DeleteOutlineIcon fontSize="small" />
-            </IconButton>
+            <>
+              <IconButton
+                size="small"
+                onClick={() => handleEditClick(params.row)}
+                title="Edit Application"
+                style={{ color: '#1976d2' }}
+              >
+                <EditOutlinedIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={() => handleDeleteClick(params.row)}
+                title="Delete Application"
+                style={{ color: '#d32f2f' }}
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </>
           )}
         </div>
       )
@@ -327,6 +353,14 @@ const Application = () => {
           fetchApplications();
         }}
       />
+      {applicationToEdit && (
+        <EditApplication
+          isOpen={editModal}
+          toggle={toggleEditModal}
+          applicationId={applicationToEdit.id}
+          onUpdateComplete={handleEditComplete}
+        />
+      )}
     </div>
   );
 };

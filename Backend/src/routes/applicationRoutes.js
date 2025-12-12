@@ -5,10 +5,9 @@ const ApplicationController = require('../controllers/applicationController');
 const { authenticate } = require('../middleware/authenticate');
 const { requireAdmin, requireVerifier } = require('../middleware/roleAuth');
 
-// Configure multer for handling file uploads
-// Use memory storage for serverless deployments
+// Configure multer for CSV files only (for import)
 const upload = multer({
-    storage: multer.memoryStorage(), // Store in memory instead of disk for serverless
+    storage: multer.memoryStorage(),
     limits: {
         fileSize: 10 * 1024 * 1024 // 10MB limit
     },
@@ -21,12 +20,37 @@ const upload = multer({
     }
 });
 
+// Configure multer for document uploads (images, PDFs) - for application creation and updates
+const uploadDocuments = multer({
+    storage: multer.memoryStorage(), // Store in memory instead of disk for serverless
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB limit
+    },
+    fileFilter: (req, file, cb) => {
+        // Allow images and PDFs
+        const allowedMimes = [
+            'image/jpeg',
+            'image/jpg',
+            'image/png',
+            'image/gif',
+            'application/pdf'
+        ];
+        
+        if (allowedMimes.includes(file.mimetype) || 
+            /\.(jpg|jpeg|png|gif|pdf)$/i.test(file.originalname)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only image files (JPEG, PNG, GIF) and PDF files are allowed'), false);
+        }
+    }
+});
+
 // Public routes (no authentication required)
 // These are used by the UserForm to submit applications
 
 // Create application from UserForm
 router.post('/companies/:companyId/applications', 
-    upload.any(), // Handle any file uploads
+    uploadDocuments.any(), // Handle document file uploads
     ApplicationController.createApplication
 );
 
@@ -87,6 +111,19 @@ router.post('/:id/reject',
 router.get('/stats/overview', 
     requireAdmin, 
     ApplicationController.getApplicationStats
+);
+
+// Update application (Admin only)
+router.put('/:id', 
+    requireAdmin,
+    uploadDocuments.any(), // Handle document file uploads
+    ApplicationController.updateApplication
+);
+
+// Delete a specific document (Admin only)
+router.delete('/documents/:documentId', 
+    requireAdmin, 
+    ApplicationController.deleteDocument
 );
 
 // Delete application (Admin only)

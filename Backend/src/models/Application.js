@@ -634,6 +634,134 @@ class Application {
             throw new Error('Failed to fetch dashboard statistics');
         }
     }
+
+    // Update application
+    async update(updateData) {
+        try {
+            const updateFields = [];
+            const updateValues = [];
+
+            // Helper function to format date values to YYYY-MM-DD format
+            const formatDate = (dateValue) => {
+                if (!dateValue || dateValue === '') {
+                    return null;
+                }
+                
+                // If it's already in YYYY-MM-DD format, return as is
+                if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+                    return dateValue;
+                }
+                
+                // If it's an ISO timestamp, extract just the date part
+                if (typeof dateValue === 'string' && dateValue.includes('T')) {
+                    return dateValue.split('T')[0];
+                }
+                
+                // If it's a Date object, format it
+                if (dateValue instanceof Date) {
+                    return dateValue.toISOString().split('T')[0];
+                }
+                
+                // Try to parse as date
+                try {
+                    const date = new Date(dateValue);
+                    if (!isNaN(date.getTime())) {
+                        return date.toISOString().split('T')[0];
+                    }
+                } catch (e) {
+                    // If parsing fails, return null
+                }
+                
+                return null;
+            };
+
+            // Date fields that need formatting
+            const dateFields = [
+                'applicant_dob',
+                'education_from_date',
+                'education_to_date',
+                'employment_from_date',
+                'employment_to_date',
+                'neighbour1_since',
+                'neighbour2_since',
+                'residing_date'
+            ];
+
+            // Build dynamic update query
+            const allowedFields = [
+                'applicant_first_name', 'applicant_last_name', 'applicant_email', 'applicant_phone',
+                'applicant_dob', 'applicant_address', 'position_applied', 'department',
+                'gender', 'languages', 'father_name', 'mother_name', 'emergency_contact_number',
+                'current_house_no', 'current_area_locality', 'current_area_locality_2', 'current_district',
+                'current_police_station', 'current_pincode', 'current_tehsil', 'current_post_office', 'current_landmark',
+                'use_current_as_permanent', 'permanent_house_no', 'permanent_area_locality', 'permanent_area_locality_2',
+                'permanent_district', 'permanent_police_station', 'permanent_pincode', 'permanent_tehsil',
+                'permanent_post_office', 'permanent_landmark',
+                'highest_education', 'institute_name', 'education_city', 'grades', 'education_from_date',
+                'education_to_date', 'education_address',
+                'reference1_name', 'reference1_address', 'reference1_relation', 'reference1_contact', 'reference1_police_station',
+                'reference2_name', 'reference2_address', 'reference2_relation', 'reference2_contact', 'reference2_police_station',
+                'reference3_name', 'reference3_address', 'reference3_relation', 'reference3_contact', 'reference3_police_station',
+                'reference_address',
+                'aadhar_number', 'pan_number',
+                'company_name', 'designation', 'employee_id', 'employment_location', 'employment_from_date',
+                'employment_to_date', 'hr_number', 'hr_email', 'work_responsibility', 'salary', 'reason_of_leaving', 'previous_manager',
+                'neighbour1_family_members', 'neighbour1_name', 'neighbour1_mobile', 'neighbour1_since', 'neighbour1_remark',
+                'neighbour2_name', 'neighbour2_mobile', 'neighbour2_since', 'neighbour2_remark',
+                'residing_date', 'residing_remark', 'bike_quantity', 'car_quantity', 'ac_quantity', 'place',
+                'house_owner_name', 'house_owner_contact', 'house_owner_address', 'residing',
+                'current_address', 'permanent_address'
+            ];
+
+            // Numeric fields that need integer conversion
+            const numericFields = ['bike_quantity', 'car_quantity', 'ac_quantity'];
+
+            allowedFields.forEach(field => {
+                if (updateData.hasOwnProperty(field)) {
+                    updateFields.push(`${field} = ?`);
+                    
+                    let value = updateData[field];
+                    
+                    // Format date fields
+                    if (dateFields.includes(field)) {
+                        value = formatDate(value);
+                    } 
+                    // Handle boolean fields
+                    else if (field === 'use_current_as_permanent') {
+                        value = value === 'true' || value === true || value === '1' || value === 1 ? true : false;
+                    }
+                    // Handle numeric fields
+                    else if (numericFields.includes(field)) {
+                        value = value !== undefined && value !== '' ? parseInt(value) || 0 : 0;
+                    }
+                    // Handle other fields
+                    else if (value !== undefined && value !== '') {
+                        value = value;
+                    } else {
+                        value = null;
+                    }
+                    
+                    updateValues.push(value);
+                }
+            });
+
+            if (updateFields.length === 0) {
+                return false;
+            }
+
+            // Always update the updated_at timestamp
+            updateFields.push('updated_at = CURRENT_TIMESTAMP');
+            updateValues.push(this.id);
+
+            const query = `UPDATE applications SET ${updateFields.join(', ')} WHERE id = ?`;
+            const [result] = await pool.execute(query, updateValues);
+
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error updating application:', error);
+            throw new Error('Failed to update application');
+        }
+    }
 }
 
 module.exports = Application;

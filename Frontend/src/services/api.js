@@ -432,6 +432,68 @@ class ApiService {
         }
     }
 
+    async updateApplication(id, applicationData) {
+        try {
+            // Create FormData for file uploads
+            const formData = new FormData();
+            
+            // Add all form fields to FormData
+            Object.keys(applicationData).forEach(key => {
+                if (applicationData[key] !== null && applicationData[key] !== undefined && applicationData[key] !== '') {
+                    if (applicationData[key] instanceof File) {
+                        formData.append(key, applicationData[key]);
+                    } else {
+                        formData.append(key, applicationData[key]);
+                    }
+                }
+            });
+
+            const url = `${this.baseURL}/applications/${id}`;
+            const headers = {
+                'Authorization': this.token ? `Bearer ${this.token}` : ''
+                // Don't set Content-Type, let browser set it for FormData
+            };
+
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: headers,
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                const error = new Error(data.message || `HTTP error! status: ${response.status}`);
+                error.status = response.status;
+                error.data = data;
+                throw error;
+            }
+
+            return data;
+        } catch (error) {
+            console.error('API Request Error:', error);
+            return {
+                success: false,
+                message: error.message || 'Failed to update application',
+                error: error
+            };
+        }
+    }
+
+    async deleteDocument(documentId) {
+        try {
+            return await this.request(`/applications/documents/${documentId}`, {
+                method: 'DELETE'
+            });
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message || 'Failed to delete document',
+                error: error
+            };
+        }
+    }
+
     // Employee/Verifier Methods
     async getAllEmployees() {
         try {

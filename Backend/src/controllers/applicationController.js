@@ -449,6 +449,120 @@ class ApplicationController {
         }
     }
 
+    // Update application
+    static async updateApplication(req, res) {
+        try {
+            const { id } = req.params;
+            let applicationData = req.body;
+
+            // Handle FormData if content-type is multipart/form-data
+            if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
+                applicationData = req.body;
+            }
+
+            // Find application
+            const application = await Application.findById(id);
+            if (!application) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Application not found'
+                });
+            }
+
+            // Create application instance
+            const appInstance = new Application(application);
+            appInstance.id = application.id;
+
+            // Prepare update data (exclude files and id)
+            const updateData = { ...applicationData };
+            delete updateData.id;
+            delete updateData.company_id; // Don't allow changing company
+            delete updateData.application_status; // Don't allow changing status via update
+            delete updateData.assigned_verifier_id; // Don't allow changing verifier via update
+            delete updateData.created_at;
+            delete updateData.updated_at;
+
+            // Update application
+            const updated = await appInstance.update(updateData);
+
+            if (!updated) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Failed to update application'
+                });
+            }
+
+            // Process uploaded files if any
+            let savedFiles = [];
+            if (req.files && req.files.length > 0) {
+                try {
+                    const fileStorageService = new FileStorageService();
+                    savedFiles = await fileStorageService.processFiles(req.files, id);
+                    console.log(`Processed ${savedFiles.length} new files for application ${id}`);
+                } catch (fileError) {
+                    console.error('Error processing files:', fileError);
+                    // Don't fail the entire request if file processing fails
+                }
+            }
+
+            // Get updated application
+            const updatedApplication = await Application.findById(id);
+
+            res.status(200).json({
+                success: true,
+                message: 'Application updated successfully',
+                data: {
+                    ...updatedApplication,
+                    filesProcessed: savedFiles.length,
+                    newFiles: savedFiles.map(file => ({
+                        fieldName: file.fieldName,
+                        originalName: file.originalName,
+                        documentType: file.documentType,
+                        size: file.size
+                    }))
+                }
+            });
+
+        } catch (error) {
+            console.error('Error updating application:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Internal server error',
+                error: error.message
+            });
+        }
+    }
+
+    // Delete a specific document
+    static async deleteDocument(req, res) {
+        try {
+            const { documentId } = req.params;
+            const fileStorageService = new FileStorageService();
+
+            const deleted = await fileStorageService.deleteFile(documentId);
+
+            if (deleted) {
+                res.status(200).json({
+                    success: true,
+                    message: 'Document deleted successfully'
+                });
+            } else {
+                res.status(404).json({
+                    success: false,
+                    message: 'Document not found'
+                });
+            }
+
+        } catch (error) {
+            console.error('Error deleting document:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Internal server error',
+                error: error.message
+            });
+        }
+    }
+
     // Delete application with cascading deletes
     static async deleteApplication(req, res) {
         try {
