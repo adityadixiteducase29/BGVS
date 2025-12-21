@@ -14,6 +14,7 @@ const applicationRoutes = require('./routes/applicationRoutes');
 const employeeRoutes = require('./routes/employeeRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const fileRoutes = require('./routes/fileRoutes');
+const questionRoutes = require('./routes/questionRoutes');
 
 // Create Express app
 const app = express();
@@ -56,6 +57,7 @@ app.use('/api/applications', applicationRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/files', fileRoutes);
+app.use('/api/questions', questionRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

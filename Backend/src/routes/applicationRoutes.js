@@ -146,4 +146,10 @@ router.post('/companies/:companyId/import-csv',
     ApplicationController.importFromCSV
 );
 
+// Export applications to Excel (Admin only)
+router.get('/export/excel', 
+    requireAdmin, 
+    ApplicationController.exportToExcel
+);
+
 module.exports = router;

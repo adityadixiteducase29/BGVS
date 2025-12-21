@@ -376,6 +376,59 @@ class ApiService {
     }
 
     // Applications Methods
+    async exportApplicationsToExcel(filters = {}) {
+        try {
+            const queryParams = new URLSearchParams();
+            if (filters.status) queryParams.append('status', filters.status);
+            if (filters.client_id) queryParams.append('client_id', filters.client_id);
+            if (filters.verifier_id) queryParams.append('verifier_id', filters.verifier_id);
+            if (filters.search) queryParams.append('search', filters.search);
+            
+            const url = `${this.baseURL}/applications/export/excel${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': this.token ? `Bearer ${this.token}` : ''
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to export applications');
+            }
+
+            // Get the blob from response
+            const blob = await response.blob();
+            
+            // Create download link
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            
+            // Get filename from Content-Disposition header or use default
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = 'applications_export.xlsx';
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="?(.+)"?/i);
+                if (filenameMatch) {
+                    filename = filenameMatch[1];
+                }
+            }
+            
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(downloadUrl);
+
+            return { success: true, message: 'Applications exported successfully' };
+        } catch (error) {
+            console.error('Error exporting applications:', error);
+            return { success: false, message: error.message || 'Failed to export applications' };
+        }
+    }
+
     async getAllApplications(filters = {}) {
         try {
             const queryParams = new URLSearchParams();
@@ -639,6 +692,130 @@ class ApiService {
             return response.ok;
         } catch (error) {
             return false;
+        }
+    }
+
+    // Question Management Methods
+    // Public method to get active questions (no authentication required - for UserForm)
+    async getPublicQuestions(formSection) {
+        try {
+            const url = `${this.baseURL}/questions/public?form_section=${formSection}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message || 'Failed to fetch questions',
+                error: error
+            };
+        }
+    }
+
+    async getAllQuestions(formSection = null, activeOnly = true) {
+        try {
+            const queryParams = new URLSearchParams();
+            if (formSection) queryParams.append('form_section', formSection);
+            if (activeOnly) queryParams.append('active_only', 'true');
+            
+            const endpoint = `/questions${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+            return await this.request(endpoint);
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message || 'Failed to fetch questions',
+                error: error
+            };
+        }
+    }
+
+    async getQuestionById(id) {
+        try {
+            return await this.request(`/questions/${id}`);
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message || 'Failed to fetch question',
+                error: error
+            };
+        }
+    }
+
+    async createQuestion(questionData) {
+        try {
+            return await this.request('/questions', {
+                method: 'POST',
+                body: JSON.stringify(questionData)
+            });
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message || 'Failed to create question',
+                error: error
+            };
+        }
+    }
+
+    async updateQuestion(id, questionData) {
+        try {
+            return await this.request(`/questions/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(questionData)
+            });
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message || 'Failed to update question',
+                error: error
+            };
+        }
+    }
+
+    async deleteQuestion(id) {
+        try {
+            return await this.request(`/questions/${id}`, {
+                method: 'DELETE'
+            });
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message || 'Failed to delete question',
+                error: error
+            };
+        }
+    }
+
+    async saveQuestionAnswer(applicationId, questionId, answerText) {
+        try {
+            return await this.request(`/questions/applications/${applicationId}/answers`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    question_id: questionId,
+                    answer_text: answerText
+                })
+            });
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message || 'Failed to save answer',
+                error: error
+            };
+        }
+    }
+
+    async getQuestionAnswers(applicationId, formSection = null) {
+        try {
+            const queryParams = new URLSearchParams();
+            if (formSection) queryParams.append('form_section', formSection);
+            
+            const endpoint = `/questions/applications/${applicationId}/answers${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+            return await this.request(endpoint);
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message || 'Failed to fetch answers',
+                error: error
+            };
         }
     }
 }

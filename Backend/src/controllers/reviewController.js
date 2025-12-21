@@ -273,6 +273,30 @@ class ReviewController {
                 };
             });
 
+            // Get question answers and add their reviews to fieldReviews
+            const Question = require('../models/Question');
+            try {
+                const questionAnswers = await Question.getAnswersByApplication(id);
+                questionAnswers.forEach(qa => {
+                    const fieldName = `question_answer_${qa.id}`;
+                    const existingReview = fieldReviewsMap.get(fieldName);
+                    
+                    fieldReviews.push(existingReview || {
+                        application_id: parseInt(id),
+                        field_name: fieldName,
+                        field_value: qa.answer_text || '',
+                        review_status: 'pending',
+                        review_notes: null,
+                        reviewed_by: null,
+                        reviewed_at: null,
+                        reviewer_email: null
+                    });
+                });
+            } catch (error) {
+                console.error('Error fetching question answers for review:', error);
+                // Don't fail the entire request if question answers can't be fetched
+            }
+
             // Build file reviews array with defaults
             const fileReviews = files.map(file => ({
                 application_id: parseInt(id),

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, ModalHeader, ModalBody, ModalFooter, Button, TabContent, TabPane, Nav, NavItem, NavLink } from 'reactstrap';
-import { TextField, Box, Typography, Divider, Paper, CardContent, CardHeader, IconButton, Chip, Alert } from '@mui/material';
+import { Modal, ModalHeader, ModalBody, ModalFooter, Button as ReactstrapButton, TabContent, TabPane, Nav, NavItem, NavLink } from 'reactstrap';
+import { TextField, Box, Typography, Divider, Paper, CardContent, CardHeader, IconButton, Chip, Alert, Select, MenuItem, FormControl, InputLabel, Button } from '@mui/material';
 import { Row, Col, Input, Label } from 'reactstrap';
-import { Close, Delete as DeleteIcon } from '@mui/icons-material';
+import { Close, Delete as DeleteIcon, Add } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -17,6 +17,8 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
   const [saving, setSaving] = useState(false);
   const [applicationData, setApplicationData] = useState(null);
   const [existingFiles, setExistingFiles] = useState([]);
+  const [questions, setQuestions] = useState([]);
+  const [questionAnswers, setQuestionAnswers] = useState([]);
   const [formData, setFormData] = useState({
     applicant_first_name: '',
     applicant_last_name: '',
@@ -127,8 +129,38 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
   useEffect(() => {
     if (isOpen && applicationId) {
       fetchApplicationData();
+      fetchQuestions();
     }
   }, [isOpen, applicationId]);
+
+  const fetchQuestions = async () => {
+    try {
+      const response = await apiService.getAllQuestions('reference', true);
+      if (response.success) {
+        setQuestions(response.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching questions:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (applicationId && questions.length > 0) {
+      fetchQuestionAnswers();
+    }
+  }, [applicationId, questions.length]);
+
+  const fetchQuestionAnswers = async () => {
+    try {
+      const response = await apiService.getQuestionAnswers(applicationId, 'reference');
+      if (response.success) {
+        const answers = response.data || [];
+        setQuestionAnswers(answers);
+      }
+    } catch (error) {
+      console.error('Error fetching question answers:', error);
+    }
+  };
 
   const fetchApplicationData = async () => {
     try {
@@ -214,6 +246,46 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
     }
   };
 
+  const handleAddQuestion = () => {
+    setQuestionAnswers([...questionAnswers, {
+      question_id: '',
+      question_text: '',
+      answer_text: ''
+    }]);
+  };
+
+  const handleQuestionSelect = async (index, questionId) => {
+    const selectedQuestion = questions.find(q => q.id === questionId);
+    const updatedAnswers = [...questionAnswers];
+    updatedAnswers[index] = {
+      ...updatedAnswers[index],
+      question_id: questionId,
+      question_text: selectedQuestion?.question_text || ''
+    };
+    setQuestionAnswers(updatedAnswers);
+  };
+
+  const handleAnswerChange = async (index, answerText) => {
+    const updatedAnswers = [...questionAnswers];
+    updatedAnswers[index] = {
+      ...updatedAnswers[index],
+      answer_text: answerText
+    };
+    setQuestionAnswers(updatedAnswers);
+  };
+
+  const handleRemoveQuestion = (index) => {
+    const updatedAnswers = questionAnswers.filter((_, i) => i !== index);
+    setQuestionAnswers(updatedAnswers);
+  };
+
+  const getAvailableQuestions = (currentIndex) => {
+    const selectedIds = questionAnswers
+      .map((qa, idx) => idx !== currentIndex ? qa.question_id : null)
+      .filter(id => id);
+    return questions.filter(q => !selectedIds.includes(q.id));
+  };
+
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -221,6 +293,13 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
       const response = await apiService.updateApplication(applicationId, formData);
       
       if (response.success) {
+        // Save question answers
+        for (const qa of questionAnswers) {
+          if (qa.question_id) {
+            await apiService.saveQuestionAnswer(applicationId, qa.question_id, qa.answer_text || '');
+          }
+        }
+        
         toast.success('Application updated successfully');
         if (onUpdateComplete) {
           onUpdateComplete();
@@ -726,6 +805,73 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
                     />
                   </Col>
                 </Row>
+
+                {/* Dynamic Questions Section */}
+                {questions.length > 0 && (
+                  <>
+                    <Divider sx={{ my: 3 }} />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63' }}>
+                        Additional Questions
+                      </Typography>
+                      <Button
+                        variant="outlined"
+                        startIcon={<Add />}
+                        onClick={handleAddQuestion}
+                        size="small"
+                      >
+                        Add Question
+                      </Button>
+                    </Box>
+
+                    {questionAnswers.map((qa, index) => (
+                      <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #E5E7EA', borderRadius: 2 }}>
+                        <Row className="g-3">
+                          <Col xs={12} md={5}>
+                            <FormControl fullWidth>
+                              <InputLabel>Select Question</InputLabel>
+                              <Select
+                                value={qa.question_id || ''}
+                                onChange={(e) => handleQuestionSelect(index, e.target.value)}
+                                label="Select Question"
+                              >
+                                {getAvailableQuestions(index).map((question) => (
+                                  <MenuItem key={question.id} value={question.id}>
+                                    {question.question_text}
+                                  </MenuItem>
+                                ))}
+                              </Select>
+                            </FormControl>
+                          </Col>
+                          <Col xs={12} md={6}>
+                            <TextField
+                              fullWidth
+                              label="Answer"
+                              placeholder="Enter your answer"
+                              value={qa.answer_text || ''}
+                              onChange={(e) => handleAnswerChange(index, e.target.value)}
+                              disabled={!qa.question_id}
+                            />
+                          </Col>
+                          <Col xs={12} md={1}>
+                            <IconButton
+                              onClick={() => handleRemoveQuestion(index)}
+                              sx={{ color: '#d32f2f' }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Col>
+                        </Row>
+                      </Box>
+                    ))}
+
+                    {questionAnswers.length === 0 && (
+                      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                        No questions added. Click "Add Question" to add a question.
+                      </Typography>
+                    )}
+                  </>
+                )}
               </Paper>
             </TabPane>
 
@@ -1047,17 +1193,17 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
           </TabContent>
         </ModalBody>
         <ModalFooter>
-          <Button color="secondary" onClick={toggle} disabled={saving}>
+          <ReactstrapButton color="secondary" onClick={toggle} disabled={saving}>
             Cancel
-          </Button>
-          <Button
+          </ReactstrapButton>
+          <ReactstrapButton
             color="primary"
             onClick={handleSave}
             disabled={saving}
             style={{ backgroundColor: '#4F378B', color: 'white' }}
           >
             {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
+          </ReactstrapButton>
         </ModalFooter>
       </Modal>
     </LocalizationProvider>

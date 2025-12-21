@@ -1,9 +1,11 @@
 const Application = require('../models/Application');
 const Company = require('../models/Company');
+const Question = require('../models/Question');
 const FileStorageService = require('../services/FileStorageService');
 const csv = require('csv-parser');
 const fs = require('fs');
 const path = require('path');
+const XLSX = require('xlsx');
 
 class ApplicationController {
     constructor() {
@@ -65,6 +67,31 @@ class ApplicationController {
                 }
             }
 
+            // Process question answers if any
+            let savedAnswers = 0;
+            if (applicationData.question_answers) {
+                try {
+                    // Parse question_answers if it's a string (from FormData)
+                    let questionAnswers = applicationData.question_answers;
+                    if (typeof questionAnswers === 'string') {
+                        questionAnswers = JSON.parse(questionAnswers);
+                    }
+
+                    if (Array.isArray(questionAnswers)) {
+                        for (const qa of questionAnswers) {
+                            if (qa.question_id && qa.answer_text !== undefined) {
+                                await Question.saveAnswer(savedApplication.id, qa.question_id, qa.answer_text || '');
+                                savedAnswers++;
+                            }
+                        }
+                        console.log(`Processed ${savedAnswers} question answers for application ${savedApplication.id}`);
+                    }
+                } catch (answerError) {
+                    console.error('Error processing question answers:', answerError);
+                    // Don't fail the entire request if answer processing fails
+                }
+            }
+
             res.status(201).json({
                 success: true,
                 message: 'Application submitted successfully',
@@ -72,6 +99,7 @@ class ApplicationController {
                     id: savedApplication.id,
                     status: savedApplication.application_status,
                     filesProcessed: savedFiles.length,
+                    answersProcessed: savedAnswers,
                     files: savedFiles.map(file => ({
                         fieldName: file.fieldName,
                         originalName: file.originalName,
@@ -176,11 +204,21 @@ class ApplicationController {
                 // Don't fail the request if file fetching fails
             }
 
+            // Get question answers
+            let questionAnswers = [];
+            try {
+                questionAnswers = await Question.getAnswersByApplication(id);
+            } catch (answerError) {
+                console.error('Error fetching question answers:', answerError);
+                // Don't fail the request if answer fetching fails
+            }
+
             res.status(200).json({
                 success: true,
                 data: {
                     ...application,
-                    files: files
+                    files: files,
+                    question_answers: questionAnswers
                 }
             });
 
@@ -1110,6 +1148,98 @@ class ApplicationController {
         }
     }
 
+    // Export applications to Excel
+    static async exportToExcel(req, res) {
+        try {
+            const { status, client_id, verifier_id, search } = req.query;
+            
+            const filters = {};
+            if (status) filters.status = status;
+            if (client_id) filters.client_id = client_id;
+            if (verifier_id) filters.verifier_id = verifier_id;
+            if (search) filters.search = search;
+
+            const applications = await Application.findAll(filters);
+
+            if (!applications || applications.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'No applications found to export'
+                });
+            }
+
+            // Prepare data for Excel
+            const excelData = applications.map(app => ({
+                'Application ID': app.id,
+                'First Name': app.applicant_first_name || '',
+                'Last Name': app.applicant_last_name || '',
+                'Email': app.applicant_email || '',
+                'Phone': app.applicant_phone || '',
+                'Date of Birth': app.applicant_dob || '',
+                'Address': app.applicant_address || '',
+                'Company': app.company_name || '',
+                'Status': app.application_status || '',
+                'Position Applied': app.position_applied || '',
+                'Department': app.department || '',
+                'Created At': app.created_at ? new Date(app.created_at).toLocaleString() : '',
+                'Assigned Verifier': app.assigned_verifier_name || 'Not Assigned',
+                'Reviewed At': app.reviewed_at ? new Date(app.reviewed_at).toLocaleString() : '',
+                'Review Notes': app.review_notes || '',
+                'Rejection Reason': app.rejection_reason || ''
+            }));
+
+            // Create workbook and worksheet
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+            // Set column widths
+            const columnWidths = [
+                { wch: 12 }, // Application ID
+                { wch: 15 }, // First Name
+                { wch: 15 }, // Last Name
+                { wch: 25 }, // Email
+                { wch: 15 }, // Phone
+                { wch: 12 }, // Date of Birth
+                { wch: 30 }, // Address
+                { wch: 20 }, // Company
+                { wch: 12 }, // Status
+                { wch: 20 }, // Position Applied
+                { wch: 15 }, // Department
+                { wch: 20 }, // Created At
+                { wch: 20 }, // Assigned Verifier
+                { wch: 20 }, // Reviewed At
+                { wch: 30 }, // Review Notes
+                { wch: 30 }  // Rejection Reason
+            ];
+            worksheet['!cols'] = columnWidths;
+
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Applications');
+
+            // Generate Excel file buffer
+            const excelBuffer = XLSX.write(workbook, { 
+                type: 'buffer', 
+                bookType: 'xlsx' 
+            });
+
+            // Set response headers
+            const filename = `applications_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+            res.setHeader('Content-Length', excelBuffer.length);
+
+            // Send the file
+            res.send(excelBuffer);
+
+        } catch (error) {
+            console.error('Error exporting applications to Excel:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to export applications to Excel',
+                error: error.message
+            });
+        }
+    }
 }
 
 module.exports = ApplicationController;

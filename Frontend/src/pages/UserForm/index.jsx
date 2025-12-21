@@ -26,6 +26,8 @@ import Reference from './Reference'
 import { useCompanyServices } from '../../utils/companyServices'
 import { Button } from 'reactstrap'
 import Logo from "./Svg/Logo.svg"
+import apiService from '../../services/api'
+
 const UserForm = () => {
   const { companyId } = useParams()
   const [activeStep, setActiveStep] = useState(0)
@@ -218,6 +220,11 @@ const UserForm = () => {
       // Add all form fields to FormData
       Object.keys(formData).forEach(key => {
         if (formData[key] !== null && formData[key] !== '') {
+          // Skip question_answers - handle separately
+          if (key === 'question_answers') {
+            return;
+          }
+          
           if (formData[key] instanceof File) {
             submitData.append(key, formData[key])
           } else {
@@ -225,6 +232,11 @@ const UserForm = () => {
           }
         }
       })
+
+      // Add question answers as JSON string
+      if (formData.question_answers && formData.question_answers.length > 0) {
+        submitData.append('question_answers', JSON.stringify(formData.question_answers))
+      }
 
       // Add company ID
       submitData.append('company_id', companyId)

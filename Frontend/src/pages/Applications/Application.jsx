@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import IconButton from '@mui/material/IconButton';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import GetAppIcon from '@mui/icons-material/GetApp';
 import apiService from '@/services/api';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
@@ -23,6 +24,7 @@ const Application = () => {
   const [importModal, setImportModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [applicationToEdit, setApplicationToEdit] = useState(null);
+  const [exporting, setExporting] = useState(false);
   const toggleImportModal = () => setImportModal(!importModal);
   const toggleEditModal = () => setEditModal(!editModal);
   // Fetch applications from API
@@ -112,6 +114,25 @@ const Application = () => {
   const handleDeleteCancel = () => {
     setDeleteModal(false);
     setApplicationToDelete(null);
+  };
+
+  const handleExportToExcel = async () => {
+    try {
+      setExporting(true);
+      apiService.setToken(token);
+      const result = await apiService.exportApplicationsToExcel();
+      
+      if (result.success) {
+        toast.success('Applications exported to Excel successfully');
+      } else {
+        toast.error(result.message || 'Failed to export applications');
+      }
+    } catch (error) {
+      console.error('Error exporting applications:', error);
+      toast.error('Failed to export applications');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const cards = [
@@ -246,13 +267,25 @@ const Application = () => {
         <h1 className="dashboard-title" style={{ color: "#4F378B" }}>
           Applications
         </h1>
-        <Button
-          color="primary"
-          className="custom-primary-button"
-          onClick={toggleImportModal}
-        >
-          Import
-        </Button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <Button
+            color="success"
+            className="custom-primary-button"
+            onClick={handleExportToExcel}
+            disabled={exporting || loading}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <GetAppIcon fontSize="small" />
+            {exporting ? 'Exporting...' : 'Export to Excel'}
+          </Button>
+          <Button
+            color="primary"
+            className="custom-primary-button"
+            onClick={toggleImportModal}
+          >
+            Import
+          </Button>
+        </div>
       </div>
 
       <div>
