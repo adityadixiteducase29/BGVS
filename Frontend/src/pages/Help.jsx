@@ -45,7 +45,7 @@ const VerifierHelp = () => {
     question_text: '',
     form_section: 'reference',
     is_active: true,
-    display_order: 0
+    // display_order: 0
   })
 
   const formSections = [
@@ -85,7 +85,7 @@ const VerifierHelp = () => {
         question_text: question.question_text,
         form_section: question.form_section,
         is_active: question.is_active,
-        display_order: question.display_order || 0
+        // display_order: question.display_order || 0
       })
     } else {
       setEditingQuestion(null)
@@ -93,7 +93,7 @@ const VerifierHelp = () => {
         question_text: '',
         form_section: 'reference',
         is_active: true,
-        display_order: 0
+        // display_order: 0
       })
     }
     setDialogOpen(true)
@@ -106,7 +106,7 @@ const VerifierHelp = () => {
       question_text: '',
       form_section: 'reference',
       is_active: true,
-      display_order: 0
+      // display_order: 0
     })
   }
 
@@ -316,7 +316,7 @@ const VerifierHelp = () => {
                     <TableRow>
                       <TableCell sx={{ fontWeight: 600 }}>Question</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>Form Section</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Display Order</TableCell>
+                      {/* <TableCell sx={{ fontWeight: 600 }}>Display Order</TableCell> */}
                       <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
                     </TableRow>
@@ -335,7 +335,7 @@ const VerifierHelp = () => {
                           <TableCell>
                             {formSections.find(s => s.value === question.form_section)?.label || question.form_section}
                           </TableCell>
-                          <TableCell>{question.display_order}</TableCell>
+                          {/* <TableCell>{question.display_order}</TableCell> */}
                           <TableCell>
                             <Typography
                               variant="body2"
@@ -414,7 +414,7 @@ const VerifierHelp = () => {
               onChange={(e) => setQuestionForm({ ...questionForm, question_text: e.target.value })}
               required
             />
-            <FormControl fullWidth>
+            {/* <FormControl fullWidth>
               <InputLabel>Form Section</InputLabel>
               <Select
                 value={questionForm.form_section}
@@ -427,14 +427,14 @@ const VerifierHelp = () => {
                   </MenuItem>
                 ))}
               </Select>
-            </FormControl>
-            <TextField
+            </FormControl> */}
+            {/* <TextField
               fullWidth
               type="number"
               label="Display Order"
               value={questionForm.display_order}
               onChange={(e) => setQuestionForm({ ...questionForm, display_order: parseInt(e.target.value) || 0 })}
-            />
+            /> */}
             <FormControlLabel
               control={
                 <Switch

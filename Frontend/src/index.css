@@ -50,100 +50,100 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 271 81% 24%;
+    --background: #FFFFFF;
+    --foreground: #4F378B;
     
     /* Dashboard primary colors */
     --primary: #004db1;
     --secondary: #f0f6ff;
     --hover-primary: #053b81;
-    --primary-glow: 271 81% 48%;
-    --primary-dark: 271 81% 28%;
+    --primary-glow: #9B5FC7;
+    --primary-dark: #5F2F8F;
     
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(271 81% 38%), hsl(271 81% 48%));
-    --gradient-sidebar: linear-gradient(180deg, hsl(0 0% 98%), hsl(0 0% 95%));
-    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(0 0% 98%));
+    --gradient-primary: linear-gradient(135deg, #7B3FA3, #9B5FC7);
+    --gradient-sidebar: linear-gradient(180deg, #FAFAFA, #F2F2F2);
+    --gradient-card: linear-gradient(135deg, #FFFFFF, #FAFAFA);
     
     /* Shadows */
-    --shadow-glow: 0 0 40px hsl(271 81% 38% / 0.3);
-    --shadow-card: 0 8px 32px hsl(0 0% 90% / 0.2);
+    --shadow-glow: 0 0 40px rgba(123, 63, 163, 0.3);
+    --shadow-card: 0 8px 32px rgba(230, 230, 230, 0.2);
     
     /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-    --card: 0 0% 100%;
-    --card-foreground: 271 81% 24%;
+    --card: #FFFFFF;
+    --card-foreground: #4F378B;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 271 81% 24%;
+    --popover: #FFFFFF;
+    --popover-foreground: #4F378B;
 
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: #FFFFFF;
 
-    --secondary-foreground: 271 81% 24%;
+    --secondary-foreground: #4F378B;
 
-    --muted: 280 75% 95%;
-    --muted-foreground: 271 81% 44%;
+    --muted: #F5E6FF;
+    --muted-foreground: #8B4FB3;
 
-    --accent: 280 75% 95%;
-    --accent-foreground: 271 81% 24%;
+    --accent: #F5E6FF;
+    --accent-foreground: #4F378B;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: #C62828;
+    --destructive-foreground: #FAFAFA;
 
-    --border: 271 81% 90%;
-    --input: 271 81% 90%;
-    --ring: 271 81% 38%;
+    --border: #E6D5F5;
+    --input: #E6D5F5;
+    --ring: #7B3FA3;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 271 81% 24%;
-    --sidebar-primary: 271 81% 38%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 280 75% 95%;
-    --sidebar-accent-foreground: 271 81% 24%;
-    --sidebar-active: 280 100% 94%;
-    --sidebar-border: 271 81% 90%;
-    --sidebar-ring: 271 81% 38%;
+    --sidebar-background: #FAFAFA;
+    --sidebar-foreground: #4F378B;
+    --sidebar-primary: #7B3FA3;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #F5E6FF;
+    --sidebar-accent-foreground: #4F378B;
+    --sidebar-active: #F0D5FF;
+    --sidebar-border: #E6D5F5;
+    --sidebar-ring: #7B3FA3;
   }
 
   .dark {
-    --background: 271 81% 5%;
-    --foreground: 0 0% 95%;
+    --background: #0F0514;
+    --foreground: #F2F2F2;
 
-    --card: 271 81% 8%;
-    --card-foreground: 0 0% 95%;
+    --card: #1A0A28;
+    --card-foreground: #F2F2F2;
 
-    --popover: 271 81% 8%;
-    --popover-foreground: 0 0% 95%;
+    --popover: #1A0A28;
+    --popover-foreground: #F2F2F2;
 
-    --primary: 271 81% 38%;
-    --primary-foreground: 0 0% 100%;
+    --primary: #7B3FA3;
+    --primary-foreground: #FFFFFF;
 
-    --secondary-foreground: 0 0% 95%;
+    --secondary-foreground: #F2F2F2;
 
-    --muted: 271 81% 15%;
-    --muted-foreground: 271 81% 70%;
+    --muted: #2E1447;
+    --muted-foreground: #C78FE3;
 
-    --accent: 271 81% 15%;
-    --accent-foreground: 0 0% 95%;
+    --accent: #2E1447;
+    --accent-foreground: #F2F2F2;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 95%;
+    --destructive: #C62828;
+    --destructive-foreground: #F2F2F2;
 
-    --border: 271 81% 20%;
-    --input: 271 81% 20%;
-    --ring: 271 81% 38%;
-    --sidebar-background: 271 81% 10%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 271 81% 38%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 271 81% 15%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-active: 280 100% 94%;
-    --sidebar-border: 271 81% 20%;
-    --sidebar-ring: 271 81% 38%;
+    --border: #3D1A5C;
+    --input: #3D1A5C;
+    --ring: #7B3FA3;
+    --sidebar-background: #1F0D33;
+    --sidebar-foreground: #F2F2F2;
+    --sidebar-primary: #7B3FA3;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #2E1447;
+    --sidebar-accent-foreground: #F2F2F2;
+    --sidebar-active: #F0D5FF;
+    --sidebar-border: #3D1A5C;
+    --sidebar-ring: #7B3FA3;
   }
 }
 
@@ -183,7 +183,7 @@ All colors MUST be HSL.
 /* Custom Button Styles - Reusable across the application */
 .custom-primary-button {
   background-color: var(--primary) !important;
-  color: hsl(var(--primary-foreground)) !important;
+  color: var(--primary-foreground) !important;
   border: none !important;
   border-radius: 8px !important;
   padding: 10px 20px !important;
@@ -230,8 +230,8 @@ All colors MUST be HSL.
 
 /* Additional Button Variants - Reusable across the application */
 .custom-secondary-button {
-  background-color: hsl(var(--secondary)) !important;
-  color: hsl(var(--secondary-foreground)) !important;
+  background-color: var(--secondary) !important;
+  color: var(--secondary-foreground) !important;
   border: none !important;
   border-radius: 8px !important;
   padding: 10px 20px !important;
@@ -271,7 +271,7 @@ All colors MUST be HSL.
 
 .custom-outline-button:hover {
   background-color: var(--primary) !important;
-  color: hsl(var(--primary-foreground)) !important;
+  color: var(--primary-foreground) !important;
   transform: translateY(-1px) !important;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
 }

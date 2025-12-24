@@ -36,7 +36,7 @@
 /* Primary variant */
 .custom-button.button-primary {
   background-color: var(--primary);
-  color: hsl(var(--primary-foreground));
+  color: var(--primary-foreground);
 }
 
 .custom-button.button-primary:hover {
@@ -58,7 +58,7 @@
 /* Secondary variant */
 .custom-button.button-secondary {
   background-color: var(--secondary);
-  color: hsl(var(--secondary-foreground));
+  color: var(--secondary-foreground);
 }
 
 .custom-button.button-secondary:hover {
@@ -148,7 +148,7 @@
 
 .custom-button.button-outline:hover {
   background-color: var(--primary);
-  color: hsl(var(--primary-foreground));
+  color: var(--primary-foreground);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
