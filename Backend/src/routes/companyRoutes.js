@@ -73,6 +73,12 @@ router.put('/:id/services',
     CompanyController.updateCompanyServices
 );
 
+// Update sub-companies (Admin only)
+router.put('/:id/sub-companies', 
+    requireAdmin, 
+    CompanyController.updateSubCompanies
+);
+
 // Deactivate company (Admin only)
 router.delete('/:id', 
     requireAdmin, 
