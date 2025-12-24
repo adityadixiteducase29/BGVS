@@ -29,8 +29,11 @@ class FileStorageService {
     // Generate Cloudinary public_id (path in Cloudinary)
     generatePublicId(originalName, applicationId) {
         const fileName = this.generateFileName(originalName, applicationId);
+        // Get environment identifier to prevent conflicts between dev/prod
+        const env = process.env.NODE_ENV || 'development';
+        const envPrefix = env === 'production' ? 'prod' : 'dev';
         // Remove extension for public_id (Cloudinary handles it)
-        const publicId = `applications/${applicationId}/${path.basename(fileName, path.extname(fileName))}`;
+        const publicId = `${envPrefix}/applications/${applicationId}/${path.basename(fileName, path.extname(fileName))}`;
         return publicId;
     }
 
@@ -43,13 +46,17 @@ class FileStorageService {
             const resourceType = file.mimetype?.startsWith('image/') ? 'image' : 
                                file.mimetype?.startsWith('video/') ? 'video' : 'raw';
             
-            // Upload to Cloudinary
+            // Get environment identifier (dev/prod) to prevent folder conflicts
+            const env = process.env.NODE_ENV || 'development';
+            const envPrefix = env === 'production' ? 'prod' : 'dev';
+            
+            // Upload to Cloudinary with environment prefix to prevent conflicts between dev/prod
             const uploadResult = await new Promise((resolve, reject) => {
                 const uploadStream = cloudinary.uploader.upload_stream(
                     {
                         resource_type: resourceType,
                         public_id: publicId,
-                        folder: `applications/${applicationId}`, // Organize by application
+                        folder: `${envPrefix}/applications/${applicationId}`, // Organize by environment and application
                         use_filename: false,
                         unique_filename: true,
                     },
