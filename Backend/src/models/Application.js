@@ -348,23 +348,47 @@ class Application {
         }
     }
 
-    // Get all applications for a company
+    // Get all applications for a company (includes sub-companies if parent)
     static async findByCompany(companyId, status = null) {
         try {
+            // Check if parent_company_id column exists
+            const [columnCheck] = await pool.execute(`
+                SELECT COUNT(*) as count 
+                FROM information_schema.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'companies' 
+                AND COLUMN_NAME = 'parent_company_id'
+            `);
+            const hasParentColumn = columnCheck[0].count > 0;
+            
+            // Get sub-companies if parent column exists
+            let companyIds = [companyId];
+            if (hasParentColumn) {
+                const [subCompanies] = await pool.execute(
+                    'SELECT id FROM companies WHERE parent_company_id = ? AND is_active = TRUE',
+                    [companyId]
+                );
+                const subCompanyIds = subCompanies.map(sc => sc.id);
+                companyIds = [companyId, ...subCompanyIds];
+            }
+            
+            // Build query with IN clause for company IDs
+            const placeholders = companyIds.map(() => '?').join(',');
             let query = `
                 SELECT 
                     a.*,
                     c.name as company_name,
                     c.industry as company_industry,
+                    ${hasParentColumn ? 'c.parent_company_id,' : ''}
                     u.first_name as verifier_first_name,
                     u.last_name as verifier_last_name,
                     u.email as verifier_email
                 FROM applications a
                 LEFT JOIN companies c ON a.company_id = c.id
                 LEFT JOIN users u ON a.assigned_verifier_id = u.id
-                WHERE a.company_id = ?
+                WHERE a.company_id IN (${placeholders})
             `;
-            const params = [companyId];
+            const params = companyIds;
 
             if (status) {
                 query += ' AND a.application_status = ?';
@@ -376,7 +400,8 @@ class Application {
             const [rows] = await pool.execute(query, params);
             return rows;
         } catch (error) {
-            throw new Error('Failed to fetch company applications');
+            console.error('Error in Application.findByCompany:', error);
+            throw new Error(`Failed to fetch company applications: ${error.message}`);
         }
     }
 
@@ -408,9 +433,19 @@ class Application {
         }
     }
 
-    // Get all applications with filters
+    // Get all applications with filters and pagination
     static async findAll(filters = {}) {
         try {
+            // Build base query for counting total records
+            let countQuery = `
+                SELECT COUNT(*) as total
+                FROM applications a
+                LEFT JOIN companies c ON a.company_id = c.id
+                LEFT JOIN users u ON a.assigned_verifier_id = u.id
+                WHERE 1=1
+            `;
+            
+            // Build main query
             let query = `
                 SELECT 
                     a.*,
@@ -428,21 +463,30 @@ class Application {
 
             if (filters.status) {
                 query += ' AND a.application_status = ?';
+                countQuery += ' AND a.application_status = ?';
                 params.push(filters.status);
             }
 
             if (filters.company_id) {
                 query += ' AND a.company_id = ?';
+                countQuery += ' AND a.company_id = ?';
                 params.push(filters.company_id);
             }
 
             if (filters.verifier_id) {
                 query += ' AND a.assigned_verifier_id = ?';
+                countQuery += ' AND a.assigned_verifier_id = ?';
                 params.push(filters.verifier_id);
             }
 
             if (filters.search) {
                 query += ` AND (
+                    a.applicant_first_name LIKE ? OR 
+                    a.applicant_last_name LIKE ? OR 
+                    a.applicant_email LIKE ? OR
+                    c.name LIKE ?
+                )`;
+                countQuery += ` AND (
                     a.applicant_first_name LIKE ? OR 
                     a.applicant_last_name LIKE ? OR 
                     a.applicant_email LIKE ? OR
@@ -454,14 +498,33 @@ class Application {
 
             query += ' ORDER BY a.created_at DESC';
 
-            if (filters.limit) {
-                query += ' LIMIT ?';
-                params.push(parseInt(filters.limit));
-            }
+            // Get total count
+            const countParams = [...params];
+            const [countResult] = await pool.execute(countQuery, countParams);
+            const total = countResult[0].total;
+
+            // Apply pagination
+            const page = Math.max(1, parseInt(filters.page) || 1);
+            const limit = Math.max(1, Math.min(100, parseInt(filters.limit) || 10)); // Max 100 per page
+            const offset = (page - 1) * limit;
+
+            // MySQL requires LIMIT and OFFSET to be integers, not placeholders
+            // Values are validated above to prevent SQL injection
+            query += ` LIMIT ${limit} OFFSET ${offset}`;
 
             const [rows] = await pool.execute(query, params);
-            return rows;
+            
+            return {
+                data: rows,
+                pagination: {
+                    total: total,
+                    page: page,
+                    limit: limit,
+                    totalPages: Math.ceil(total / limit)
+                }
+            };
         } catch (error) {
+            console.error('Error in Application.findAll:', error);
             throw new Error('Failed to fetch applications');
         }
     }
