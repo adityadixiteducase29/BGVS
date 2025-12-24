@@ -37,7 +37,7 @@
 }
 
 .sidebar-navigation-label {
-  color: #3C2D63 !important;
+  color: var(--primary) !important;
   font-size: 0.75rem !important;
   font-weight: 600 !important;
   text-transform: uppercase !important;
@@ -71,7 +71,7 @@
   border: none !important;
   outline: none !important;
   background: transparent !important;
-  color: #3C2D63 !important;
+  color: var(--primary) !important;
   font-family: inherit !important;
   font-size: inherit !important;
   line-height: inherit !important;
@@ -87,8 +87,8 @@
 
 /* Active state */
 .sidebar-menu-button.active {
-  background-color: #EADDFF !important;
-  color: #3C2D63 !important;
+  background-color: var(--secondary) !important;
+  color: var(--primary) !important;
   font-weight: 500 !important;
   padding: 25px 10px !important;
   height: 51px !important;
@@ -98,7 +98,7 @@
 /* Icon styling */
 .sidebar-menu-button svg,
 .sidebar-menu-button .icon {
-  color: #3C2D63 !important;
+  color: var(--primary) !important;
   min-width: 20px !important;
   height: 20px !important;
   flex-shrink: 0 !important;
@@ -157,14 +157,14 @@
   border-radius: 8px !important;
   transition: all 0.2s ease !important;
   text-decoration: none !important;
-  color: #3C2D63 !important;
+  color: var(--primary) !important;
 }
 
 /* Active state styling */
 .sidebar nav a.active,
 [data-radix-sidebar] nav a.active {
   background-color: #EADDFF !important;
-  color: #3C2D63 !important;
+  color: var(--primary) !important;
   font-weight: 500 !important;
 }
 
@@ -177,7 +177,7 @@
 /* Icon styling in sidebar */
 .sidebar nav a svg,
 [data-radix-sidebar] nav a svg {
-  color: #3C2D63 !important;
+  color: var(--primary) !important;
   min-width: 20px !important;
   height: 20px !important;
 }
@@ -190,7 +190,7 @@
   z-index: 10 !important;
   background: transparent !important;
   border: none !important;
-  color: #3C2D63 !important;
+  color: var(--primary) !important;
   padding: 8px !important;
   border-radius: 4px !important;
   cursor: pointer !important;
@@ -198,7 +198,7 @@
 }
 
 .sidebar-pin-button:hover {
-  background-color: rgba(60, 45, 99, 0.1) !important;
+  background-color: var(--primary) !important;
 }
 
 /* Responsive adjustments */
