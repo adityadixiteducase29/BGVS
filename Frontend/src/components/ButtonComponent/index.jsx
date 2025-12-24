@@ -25,7 +25,7 @@ const ButtonComponent = ({
   const getCustomStyles = () => {
     if (backgroundColor || textColor) {
       return {
-        backgroundColor: backgroundColor || '#4F378B',
+        backgroundColor: backgroundColor || 'var(--primary)',
         color: textColor || '#FFFFFF',
         border: 'none',
         transition: 'all 0.2s ease',
