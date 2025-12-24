@@ -54,7 +54,8 @@ All colors MUST be HSL.
     --foreground: 271 81% 24%;
     
     /* Dashboard primary colors */
-    --primary: 271 81% 38%;
+    --primary: #004db1;
+    --secondary: #f0f6ff;
     --primary-glow: 271 81% 48%;
     --primary-dark: 271 81% 28%;
     
@@ -78,7 +79,6 @@ All colors MUST be HSL.
 
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 280 75% 95%;
     --secondary-foreground: 271 81% 24%;
 
     --muted: 280 75% 95%;
@@ -120,7 +120,6 @@ All colors MUST be HSL.
     --primary: 271 81% 38%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 271 81% 15%;
     --secondary-foreground: 0 0% 95%;
 
     --muted: 271 81% 15%;
@@ -174,7 +173,7 @@ All colors MUST be HSL.
 }
 
 .button-primary {
-  background-color: #4F378B !important;
+  background-color: var(--primary) !important;
 }
 .button-text-white {
   color: #fff !important;
@@ -182,7 +181,7 @@ All colors MUST be HSL.
 
 /* Custom Button Styles - Reusable across the application */
 .custom-primary-button {
-  background-color: hsl(var(--primary)) !important;
+  background-color: var(--primary) !important;
   color: hsl(var(--primary-foreground)) !important;
   border: none !important;
   border-radius: 8px !important;
@@ -254,8 +253,8 @@ All colors MUST be HSL.
 
 .custom-outline-button {
   background-color: transparent !important;
-  color: hsl(var(--primary)) !important;
-  border: 2px solid hsl(var(--primary)) !important;
+  color: var(--primary) !important;
+  border: 2px solid var(--primary) !important;
   border-radius: 8px !important;
   padding: 10px 20px !important;
   font-weight: 500 !important;
@@ -270,7 +269,7 @@ All colors MUST be HSL.
 }
 
 .custom-outline-button:hover {
-  background-color: hsl(var(--primary)) !important;
+  background-color: var(--primary) !important;
   color: hsl(var(--primary-foreground)) !important;
   transform: translateY(-1px) !important;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
