@@ -23,10 +23,10 @@ const Tenancy = ({ formData, updateFormData }) => {
       />
       <Divider sx={{ mb: 2 }} />
       <CardContent sx={{ pt: 0 }}>
-        
+
         {/* House Owner Details Section */}
         <Box sx={{ mb: 4 }}>
-          <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
             House Owner details
           </Typography>
           <Row className="g-3">
@@ -47,10 +47,10 @@ const Tenancy = ({ formData, updateFormData }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -72,10 +72,10 @@ const Tenancy = ({ formData, updateFormData }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -98,10 +98,10 @@ const Tenancy = ({ formData, updateFormData }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -124,10 +124,10 @@ const Tenancy = ({ formData, updateFormData }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}

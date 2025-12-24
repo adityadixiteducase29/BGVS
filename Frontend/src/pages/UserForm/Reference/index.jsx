@@ -14,7 +14,7 @@ import {
   IconButton
 } from '@mui/material'
 import { Row, Col } from 'reactstrap'
-import { Add, Delete } from '@mui/icons-material'
+import { Delete } from '@mui/icons-material'
 import { Button } from '@mui/material'
 import apiService from '@/services/api'
 
@@ -31,10 +31,10 @@ const Reference = ({ formData, updateFormData, companyId }) => {
       const response = await apiService.getPublicQuestions('reference')
       if (response.success) {
         setQuestions(response.data || [])
-        // Initialize question answers
-        const initialAnswers = (response.data || []).map(q => ({
-          question_id: q.id,
-          question_text: q.question_text,
+        // Initialize with 5 empty question answer boxes by default
+        const initialAnswers = Array.from({ length: 5 }, () => ({
+          question_id: '',
+          question_text: '',
           answer_text: ''
         }))
         setQuestionAnswers(initialAnswers)
@@ -42,14 +42,6 @@ const Reference = ({ formData, updateFormData, companyId }) => {
     } catch (error) {
       console.error('Error fetching questions:', error)
     }
-  }
-
-  const handleAddQuestion = () => {
-    setQuestionAnswers([...questionAnswers, {
-      question_id: '',
-      question_text: '',
-      answer_text: ''
-    }])
   }
 
   const handleQuestionSelect = (index, questionId) => {
@@ -75,7 +67,13 @@ const Reference = ({ formData, updateFormData, companyId }) => {
   }
 
   const handleRemoveQuestion = (index) => {
-    const updatedAnswers = questionAnswers.filter((_, i) => i !== index)
+    // Reset the question at this index instead of removing it
+    const updatedAnswers = [...questionAnswers]
+    updatedAnswers[index] = {
+      question_id: '',
+      question_text: '',
+      answer_text: ''
+    }
     setQuestionAnswers(updatedAnswers)
     updateFormData({ question_answers: updatedAnswers })
   }
@@ -99,10 +97,10 @@ const Reference = ({ formData, updateFormData, companyId }) => {
       />
       <Divider sx={{ mb: 2 }} />
       <CardContent sx={{ pt: 0 }}>
-        
+
         {/* Reference Information - 1 */}
         <Box sx={{ mb: 4 }}>
-          <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
             Reference Information - 1
           </Typography>
           <Row className="g-3">
@@ -123,10 +121,10 @@ const Reference = ({ formData, updateFormData, companyId }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -148,10 +146,10 @@ const Reference = ({ formData, updateFormData, companyId }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -174,10 +172,10 @@ const Reference = ({ formData, updateFormData, companyId }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -199,10 +197,10 @@ const Reference = ({ formData, updateFormData, companyId }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -224,10 +222,10 @@ const Reference = ({ formData, updateFormData, companyId }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -240,7 +238,7 @@ const Reference = ({ formData, updateFormData, companyId }) => {
 
         {/* Reference Information - 2 */}
         <Box sx={{ mb: 4 }}>
-          <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
             Reference Information - 2
           </Typography>
           <Row className="g-3">
@@ -261,10 +259,10 @@ const Reference = ({ formData, updateFormData, companyId }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -286,10 +284,10 @@ const Reference = ({ formData, updateFormData, companyId }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -312,10 +310,10 @@ const Reference = ({ formData, updateFormData, companyId }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -337,10 +335,10 @@ const Reference = ({ formData, updateFormData, companyId }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -362,10 +360,10 @@ const Reference = ({ formData, updateFormData, companyId }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -378,7 +376,7 @@ const Reference = ({ formData, updateFormData, companyId }) => {
 
         {/* Reference Information - 3 */}
         <Box sx={{ mb: 4 }}>
-          <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
             Reference Information - 3
           </Typography>
           <Row className="g-3">
@@ -399,10 +397,10 @@ const Reference = ({ formData, updateFormData, companyId }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -424,10 +422,10 @@ const Reference = ({ formData, updateFormData, companyId }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -450,10 +448,10 @@ const Reference = ({ formData, updateFormData, companyId }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -475,10 +473,10 @@ const Reference = ({ formData, updateFormData, companyId }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -500,10 +498,10 @@ const Reference = ({ formData, updateFormData, companyId }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -534,10 +532,10 @@ const Reference = ({ formData, updateFormData, companyId }) => {
                       borderColor: '#79747E'
                     },
                     '&:hover fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#6750A4'
+                      borderColor: 'var(--primary)'
                     }
                   }
                 }}
@@ -551,50 +549,36 @@ const Reference = ({ formData, updateFormData, companyId }) => {
           <>
             <Divider sx={{ my: 3 }} />
             <Box sx={{ mb: 4 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63' }}>
-                  Additional Questions
-                </Typography>
-                <Button
-                  variant="outlined"
-                  startIcon={<Add />}
-                  onClick={handleAddQuestion}
-                  sx={{
-                    borderColor: '#6750A4',
-                    color: '#6750A4',
-                    '&:hover': {
-                      borderColor: '#4F378B',
-                      backgroundColor: '#F5F5F5'
-                    }
-                  }}
-                >
-                  Add Question
-                </Button>
-              </Box>
+              <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
+                Additional Questions (Select 5 questions to answer)
+              </Typography>
 
               {questionAnswers.map((qa, index) => (
                 <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #E5E7EA', borderRadius: 2 }}>
                   <Row className="g-3">
                     <Col className="col-12 col-md-5">
                       <FormControl fullWidth>
-                        <InputLabel>Select Question</InputLabel>
+                        <InputLabel>Select Question {index + 1}</InputLabel>
                         <Select
                           value={qa.question_id || ''}
                           onChange={(e) => handleQuestionSelect(index, e.target.value)}
-                          label="Select Question"
+                          label={`Select Question ${index + 1}`}
                           sx={{
                             height: 56,
                             '& .MuiOutlinedInput-notchedOutline': {
                               borderColor: '#79747E'
                             },
                             '&:hover .MuiOutlinedInput-notchedOutline': {
-                              borderColor: '#6750A4'
+                              borderColor: 'var(--primary)'
                             },
                             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                              borderColor: '#6750A4'
+                              borderColor: 'var(--primary)'
                             }
                           }}
                         >
+                          <MenuItem value="">
+                            <em>None</em>
+                          </MenuItem>
                           {getAvailableQuestions(index).map((question) => (
                             <MenuItem key={question.id} value={question.id}>
                               {question.question_text}
@@ -620,32 +604,28 @@ const Reference = ({ formData, updateFormData, companyId }) => {
                               borderColor: '#79747E'
                             },
                             '&:hover fieldset': {
-                              borderColor: '#6750A4'
+                              borderColor: 'var(--primary)'
                             },
                             '&.Mui-focused fieldset': {
-                              borderColor: '#6750A4'
+                              borderColor: 'var(--primary)'
                             }
                           }
                         }}
                       />
                     </Col>
-                    <Col className="col-12 col-md-1">
+                    {/* <Col className="col-12 col-md-1">
                       <IconButton
                         onClick={() => handleRemoveQuestion(index)}
+                        disabled={questionAnswers.length <= 1}
                         sx={{ color: '#d32f2f', mt: 1 }}
+                        title={questionAnswers.length <= 1 ? 'At least one question is required' : 'Remove question'}
                       >
                         <Delete />
                       </IconButton>
-                    </Col>
+                    </Col> */}
                   </Row>
                 </Box>
               ))}
-
-              {questionAnswers.length === 0 && (
-                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                  No questions added. Click "Add Question" to add a question.
-                </Typography>
-              )}
             </Box>
           </>
         )}

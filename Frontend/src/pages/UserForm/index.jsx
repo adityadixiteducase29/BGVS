@@ -25,8 +25,6 @@ import PersonalInformation from './PersonalInfo'
 import Reference from './Reference'
 import { useCompanyServices } from '../../utils/companyServices'
 import { Button } from 'reactstrap'
-import Logo from "./Svg/Logo.svg"
-import apiService from '../../services/api'
 
 const UserForm = () => {
   const { companyId } = useParams()
@@ -328,7 +326,7 @@ const UserForm = () => {
         {/* Header */}
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: 4 }}>
           <div className='d-flex align-items-center gap-2'>
-            <img src={Logo} alt="logo" />
+            <img src="/Profile.jpeg" alt="logo" height={200} width={200}/>
             <Typography variant="h3" sx={{ fontWeight: 400, color: '#4A4458' }}>
               Background Verification Details
             </Typography>
@@ -339,12 +337,12 @@ const UserForm = () => {
               size="large"
               onClick={handleSubmit}
               style={{
-                backgroundColor: '#4F378B',
+                backgroundColor: 'var(--primary)',
                 color: 'white'
               }}
               sx={{
                 '&:hover': {
-                  backgroundColor: '#3C2D63'
+                  backgroundColor: 'var(--primary)'
                 },
                 px: 4,
                 py: 1.5
@@ -378,7 +376,7 @@ const UserForm = () => {
                           cursor: 'pointer',
                           '& .MuiStepLabel-iconContainer': {
                             '& .MuiStepIcon-root': {
-                              color: index === activeStep ? '#4F378B' : index < activeStep ? '#4F378B' : '#CED2D6',
+                              color: index === activeStep ? 'var(--primary)' : index < activeStep ? 'var(--primary)' : '#CED2D6',
                               '& .MuiStepIcon-text': {
                                 fill: index === activeStep || index < activeStep ? 'white' : '#9EA5AD',
                                 fontSize: '0.75rem',
@@ -387,11 +385,11 @@ const UserForm = () => {
                             }
                           },
                           '& .MuiStepLabel-label': {
-                            color: index === activeStep ? '#3C2D63' : index < activeStep ? '#3C2D63' : '#9EA5AD',
+                            color: index === activeStep ? 'var(--primary)' : index < activeStep ? 'var(--primary)' : '#9EA5AD',
                             fontWeight: 500,
                             fontSize: '1rem',
                             '&:hover': {
-                              color: '#4F378B'
+                              color: 'var(--primary)'
                             }
                           }
                         }}

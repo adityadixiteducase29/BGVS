@@ -105,7 +105,7 @@ const EmploymentDetails = ({ formData, updateFormData }) => {
           
           {/* Company Details Section */}
           <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
               Company details
             </Typography>
             <Row className="g-3">
@@ -126,10 +126,10 @@ const EmploymentDetails = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -151,10 +151,10 @@ const EmploymentDetails = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -177,10 +177,10 @@ const EmploymentDetails = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -202,10 +202,10 @@ const EmploymentDetails = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -228,10 +228,10 @@ const EmploymentDetails = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -253,10 +253,10 @@ const EmploymentDetails = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -279,10 +279,10 @@ const EmploymentDetails = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                          borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -304,10 +304,10 @@ const EmploymentDetails = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -335,10 +335,10 @@ const EmploymentDetails = ({ formData, updateFormData }) => {
                             borderColor: '#79747E'
                           },
                           '&:hover fieldset': {
-                            borderColor: '#6750A4'
+                            borderColor: 'var(--primary)'
                           },
                           '&.Mui-focused fieldset': {
-                            borderColor: '#6750A4'
+                            borderColor: 'var(--primary)'
                           }
                         }
                       }
@@ -371,10 +371,10 @@ const EmploymentDetails = ({ formData, updateFormData }) => {
                             borderColor: '#79747E'
                           },
                           '&:hover fieldset': {
-                            borderColor: '#6750A4'
+                            borderColor: 'var(--primary)'
                           },
                           '&.Mui-focused fieldset': {
-                            borderColor: '#6750A4'
+                            borderColor: 'var(--primary)'
                           }
                         }
                       }
@@ -403,10 +403,10 @@ const EmploymentDetails = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                          borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -429,10 +429,10 @@ const EmploymentDetails = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -445,7 +445,7 @@ const EmploymentDetails = ({ formData, updateFormData }) => {
 
           {/* Documents Section */}
           <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
               Documents
             </Typography>
             

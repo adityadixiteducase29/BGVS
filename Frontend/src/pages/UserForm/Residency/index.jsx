@@ -52,7 +52,7 @@ const Residency = ({ formData, updateFormData }) => {
           
           {/* Neighbour - 1 Section */}
           <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
               Neighbour - 1
             </Typography>
             <Row className="g-3">
@@ -73,10 +73,10 @@ const Residency = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -98,10 +98,10 @@ const Residency = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                          borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -124,10 +124,10 @@ const Residency = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -149,10 +149,10 @@ const Residency = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -163,7 +163,7 @@ const Residency = ({ formData, updateFormData }) => {
 
           {/* Neighbour - 2 Section */}
           <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
               Neighbour - 2
             </Typography>
             <Row className="g-3">
@@ -184,10 +184,10 @@ const Residency = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -209,10 +209,10 @@ const Residency = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -235,10 +235,10 @@ const Residency = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -260,10 +260,10 @@ const Residency = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                            borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -292,10 +292,10 @@ const Residency = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                          borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -322,10 +322,10 @@ const Residency = ({ formData, updateFormData }) => {
                             borderColor: '#79747E'
                           },
                           '&:hover fieldset': {
-                            borderColor: '#6750A4'
+                            borderColor: 'var(--primary)'
                           },
                           '&.Mui-focused fieldset': {
-                            borderColor: '#6750A4'
+                            borderColor: 'var(--primary)'
                           }
                         }
                       }
@@ -354,10 +354,10 @@ const Residency = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -380,10 +380,10 @@ const Residency = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }
                   }}
@@ -394,7 +394,7 @@ const Residency = ({ formData, updateFormData }) => {
 
           {/* Appliance and Vehicle Information Section */}
           <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
               Appliance and Vehicle Information
             </Typography>
             <Row className="g-3">
@@ -415,10 +415,10 @@ const Residency = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }}
                   >
@@ -449,10 +449,10 @@ const Residency = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#6750A4'
+                        borderColor: 'var(--primary)'
                       }
                     }}
                   >
@@ -483,10 +483,10 @@ const Residency = ({ formData, updateFormData }) => {
                         borderColor: '#79747E'
                       },
                       '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#6750A4'
+                            borderColor: 'var(--primary)'
                       },
                       '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#6750A4'
+                          borderColor: 'var(--primary)'
                       }
                     }}
                   >

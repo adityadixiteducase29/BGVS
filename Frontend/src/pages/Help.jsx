@@ -206,7 +206,7 @@ const VerifierHelp = () => {
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col gap-2">
-        <h1 className="dashboard-title" style={{color:"#4F378B"}}>
+        <h1 className="dashboard-title" style={{color: "var(--primary)"}}>
           Help & Support
         </h1>
         <p className="text-gray-600">Find answers to common questions and get support for verification tasks</p>
@@ -287,7 +287,7 @@ const VerifierHelp = () => {
           <Paper elevation={1} sx={{ p: 3, borderRadius: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Settings sx={{ color: '#4F378B' }} />
+                <Settings sx={{ color: 'var(--primary)' }} />
                 <Typography variant="h5" sx={{ fontWeight: 500, color: '#4A4458' }}>
                   Form Questions Management
                 </Typography>
@@ -297,8 +297,8 @@ const VerifierHelp = () => {
                 startIcon={<Add />}
                 onClick={() => handleOpenDialog()}
                 sx={{
-                  backgroundColor: '#4F378B',
-                  '&:hover': { backgroundColor: '#3C2D63' }
+                  backgroundColor: 'var(--primary)',
+                  '&:hover': { backgroundColor: 'var(--primary)' }
                 }}
               >
                 Add Question
@@ -451,7 +451,7 @@ const VerifierHelp = () => {
           <Button
             onClick={handleSaveQuestion}
             variant="contained"
-            sx={{ backgroundColor: '#4F378B', '&:hover': { backgroundColor: '#3C2D63' } }}
+            sx={{ backgroundColor: 'var(--primary)', '&:hover': { backgroundColor: 'var(--primary)' } }}
           >
             {editingQuestion ? 'Update' : 'Create'}
           </Button>

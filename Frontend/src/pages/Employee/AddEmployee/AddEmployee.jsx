@@ -225,7 +225,7 @@ const AddEmployee = ({ modal, toggle, refreshFlag, setRefreshFlag }) => {
                           label={company ? company.label : value} 
                           size="small"
                           style={{ 
-                            backgroundColor: '#6750A4', 
+                            backgroundColor: 'var(--primary)', 
                             color: 'white'
                           }}
                           onDelete={() => handleRemoveCompany(value)}

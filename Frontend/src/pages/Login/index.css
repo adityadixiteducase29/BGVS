@@ -145,7 +145,7 @@
 .plant-leaves {
   width: 60px;
   height: 40px;
-  background: #4F378B;
+  background: var(--primary);
   border-radius: 30px 30px 0 0;
   margin-bottom: 10px;
   position: relative;
@@ -159,14 +159,14 @@
   transform: translateX(-50%);
   width: 40px;
   height: 30px;
-  background: #4F378B;
+  background: var(--primary);
   border-radius: 20px 20px 0 0;
 }
 
 .device {
   width: 80px;
   height: 50px;
-  background: #21005D;
+  background: var(--primary);
   border-radius: 10px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   position: relative;
@@ -175,7 +175,7 @@
 .device-screen {
   width: 70px;
   height: 35px;
-  background: #4F378B;
+  background: var(--primary);
   border-radius: 5px;
   position: absolute;
   top: 7px;
@@ -281,7 +281,7 @@
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  color: #4F378B;
+  color: var(--primary);
   z-index: 2;
 }
 
@@ -290,7 +290,7 @@
   width: 100%;
   padding: 0.75rem 0.75rem 0.75rem 2.5rem;
   border: none !important;
-  border-bottom: 2px solid #4F378B !important;
+  border-bottom: 2px solid var(--primary) !important;
   background: transparent !important;
   font-family: 'Poppins', sans-serif !important;
   font-size: 1rem !important;
@@ -318,7 +318,7 @@
   left: 0;
   width: 100%;
   height: 2px;
-  background: #4F378B;
+  background: var(--primary);
   transform: scaleX(0);
   transition: transform 0.3s ease;
 }
@@ -334,7 +334,7 @@
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #4F378B;
+  color: var(--primary);
   cursor: pointer;
   padding: 0.25rem;
   display: flex;
@@ -381,13 +381,13 @@
 }
 
 .forgot-password:hover {
-  color: #4F378B;
+  color: var(--primary);
 }
 
 /* Login Button */
 .login-button {
   width: 100%;
-  background: #4F378B !important;
+  background: var(--primary) !important;
   border: none !important;
   border-radius: 32px !important;
   padding: 1rem 2rem !important;
@@ -466,8 +466,8 @@
 }
 
 .form-check-input:checked {
-  background-color: #4F378B !important;
-  border-color: #4F378B !important;
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
 }
 
 .form-check-input:focus {

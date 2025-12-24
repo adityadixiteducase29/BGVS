@@ -23,11 +23,12 @@ import Tenancy from './ReviewTenancy'
 import Education from './ReviewEducation'
 import PersonalInformation from './ReviewPersonalInfo'
 import Reference from './ReviewReference'
+import EditApplication from '../Applications/EditApplication'
 import { useCompanyServices } from '../../utils/companyServices'
 import { Button } from 'reactstrap'
 import apiService from '../../services/api'
 import { toast } from 'react-toastify'
-// import Logo from "../../assets/Logo.svg"
+
 const ReviewApplication = () => {
   const { id: applicationId } = useParams()
   const navigate = useNavigate()
@@ -173,8 +174,11 @@ const ReviewApplication = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [basicDetails, setBasicDetails] = useState(null);
+  const [editModal, setEditModal] = useState(false);
   console.log(formData, "formData")
   console.log(reviewData, "reviewData")
+  
+  const toggleEditModal = () => setEditModal(!editModal);
   // Fetch application data
   const fetchApplicationData = async () => {
     try {
@@ -557,12 +561,33 @@ const ReviewApplication = () => {
         {/* Header */}
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: 4 }}>
           <div className='d-flex align-items-center gap-2'>
-            <img src="/Logo.svg" alt="logo" />
+            <img src="/Profile.jpeg" alt="logo" height={200} width={200}/>
             <Typography variant="h3" sx={{ fontWeight: 400, color: '#4A4458' }}>
               Background Verification Details
             </Typography>
           </div>
-          <Box sx={{ mt: 4, textAlign: 'center' }}>
+          <Box sx={{ mt: 4, textAlign: 'center', display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+            <Button
+              variant="outlined"
+              size="large"
+              onClick={toggleEditModal}
+              disabled={isSaving || isFinalizing}
+              style={{
+                borderColor: 'var(--primary)',
+                color: 'white',
+                backgroundColor: 'var(--primary)'
+              }}
+              sx={{
+                '&:hover': {
+                  borderColor: 'var(--primary)',
+                  backgroundColor: 'var(--primary)'
+                },
+                px: 4,
+                py: 1.5
+              }}
+            >
+              Edit Application
+            </Button>
             <Button
               variant="contained"
               size="large"
@@ -570,12 +595,12 @@ const ReviewApplication = () => {
               className='mr-2'
               disabled={isSaving || isFinalizing}
               style={{
-                backgroundColor: '#4F378B',
+                backgroundColor: 'var(--primary)',
                 color: 'white'
               }}
               sx={{
                 '&:hover': {
-                  backgroundColor: '#3C2D63'
+                  backgroundColor: 'var(--primary)'
                 },
                 px: 4,
                 py: 1.5
@@ -589,12 +614,12 @@ const ReviewApplication = () => {
               onClick={handleFinalizeReview}
               disabled={isSaving || isFinalizing}
               style={{
-                backgroundColor: '#4F378B',
+                backgroundColor: 'var(--primary)',
                 color: 'white'
               }}
               sx={{
                 '&:hover': {
-                  backgroundColor: '#3C2D63'
+                  backgroundColor: 'var(--primary)'
                 },
                 px: 4,
                 py: 1.5
@@ -628,7 +653,7 @@ const ReviewApplication = () => {
                           cursor: 'pointer',
                           '& .MuiStepLabel-iconContainer': {
                             '& .MuiStepIcon-root': {
-                              color: index === activeStep ? '#4F378B' : index < activeStep ? '#4F378B' : '#CED2D6',
+                              color: index === activeStep ? 'var(--primary)' : index < activeStep ? 'var(--primary)' : '#CED2D6',
                               '& .MuiStepIcon-text': {
                                 fill: index === activeStep || index < activeStep ? 'white' : '#9EA5AD',
                                 fontSize: '0.75rem',
@@ -637,11 +662,11 @@ const ReviewApplication = () => {
                             }
                           },
                           '& .MuiStepLabel-label': {
-                            color: index === activeStep ? '#3C2D63' : index < activeStep ? '#3C2D63' : '#9EA5AD',
+                            color: index === activeStep ? 'var(--primary)' : index < activeStep ? 'var(--primary)' : '#9EA5AD',
                             fontWeight: 500,
                             fontSize: '1rem',
                             '&:hover': {
-                              color: '#4F378B'
+                              color: 'var(--primary)'
                             }
                           }
                         }}
@@ -670,7 +695,7 @@ const ReviewApplication = () => {
                       <Typography variant="caption" sx={{ color: '#9EA5AD', fontSize: '0.75rem', fontWeight: 500 }}>
                         Full Name
                       </Typography>
-                      <Typography variant="body1" sx={{ color: '#3C2D63', fontWeight: 500, mt: 0.5 }}>
+                      <Typography variant="body1" sx={{ color: 'var(--primary)', fontWeight: 500, mt: 0.5 }}>
                         {basicDetails.full_name || `${basicDetails.applicant_first_name} ${basicDetails.applicant_last_name}`.trim() || 'N/A'}
                       </Typography>
                     </Box>
@@ -678,7 +703,7 @@ const ReviewApplication = () => {
                       <Typography variant="caption" sx={{ color: '#9EA5AD', fontSize: '0.75rem', fontWeight: 500 }}>
                         Email
                       </Typography>
-                      <Typography variant="body1" sx={{ color: '#3C2D63', mt: 0.5 }}>
+                      <Typography variant="body1" sx={{ color: 'var(--primary)', mt: 0.5 }}>
                         {basicDetails.applicant_email || 'N/A'}
                       </Typography>
                     </Box>
@@ -686,7 +711,7 @@ const ReviewApplication = () => {
                       <Typography variant="caption" sx={{ color: '#9EA5AD', fontSize: '0.75rem', fontWeight: 500 }}>
                         Phone
                       </Typography>
-                      <Typography variant="body1" sx={{ color: '#3C2D63', mt: 0.5 }}>
+                      <Typography variant="body1" sx={{ color: 'var(--primary)', mt: 0.5 }}>
                         {basicDetails.applicant_phone || 'N/A'}
                       </Typography>
                     </Box>
@@ -694,7 +719,7 @@ const ReviewApplication = () => {
                       <Typography variant="caption" sx={{ color: '#9EA5AD', fontSize: '0.75rem', fontWeight: 500 }}>
                         Address
                       </Typography>
-                      <Typography variant="body2" sx={{ color: '#3C2D63', mt: 0.5 }}>
+                      <Typography variant="body2" sx={{ color: 'var(--primary)', mt: 0.5 }}>
                         {basicDetails.applicant_address || basicDetails.current_address || 'N/A'}
                       </Typography>
                     </Box>
@@ -725,6 +750,20 @@ const ReviewApplication = () => {
           </Box>
         </Box>
       </Container>
+      
+      {/* Edit Application Modal */}
+      {applicationId && (
+        <EditApplication
+          isOpen={editModal}
+          toggle={toggleEditModal}
+          applicationId={applicationId}
+          onUpdateComplete={() => {
+            // Refresh application data after edit
+            fetchApplicationData();
+            toast.success('Application updated successfully');
+          }}
+        />
+      )}
     </Box>
   )
 }

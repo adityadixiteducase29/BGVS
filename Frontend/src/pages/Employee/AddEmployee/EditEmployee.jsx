@@ -241,7 +241,7 @@ const EditEmployee = ({ modal, toggle, refreshFlag, setRefreshFlag, employeeData
                           label={company ? company.label : value} 
                           size="small"
                           style={{ 
-                            backgroundColor: '#6750A4', 
+                            backgroundColor: 'var(--primary)', 
                             color: 'white'
                           }}
                           onDelete={() => handleRemoveCompany(value)}
