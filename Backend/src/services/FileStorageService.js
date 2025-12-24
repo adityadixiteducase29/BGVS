@@ -1,14 +1,16 @@
 const fs = require('fs');
 const path = require('path');
 const { pool } = require('../config/database');
+const cloudinary = require('../config/cloudinary');
 
 class FileStorageService {
     constructor() {
+        // Keep uploadDir for backward compatibility (files not yet migrated)
         this.uploadDir = path.join(__dirname, '../../uploads');
         this.ensureUploadDir();
     }
 
-    // Ensure upload directory exists
+    // Ensure upload directory exists (for backward compatibility)
     ensureUploadDir() {
         if (!fs.existsSync(this.uploadDir)) {
             fs.mkdirSync(this.uploadDir, { recursive: true });
@@ -24,46 +26,108 @@ class FileStorageService {
         return `${applicationId}_${baseName}_${timestamp}_${randomString}${extension}`;
     }
 
-    // Save file to disk
+    // Generate Cloudinary public_id (path in Cloudinary)
+    generatePublicId(originalName, applicationId) {
+        const fileName = this.generateFileName(originalName, applicationId);
+        // Remove extension for public_id (Cloudinary handles it)
+        const publicId = `applications/${applicationId}/${path.basename(fileName, path.extname(fileName))}`;
+        return publicId;
+    }
+
+    // Save file to Cloudinary
     async saveFile(file, applicationId) {
         try {
-            const fileName = this.generateFileName(file.originalname, applicationId);
-            const filePath = path.join(this.uploadDir, fileName);
+            const publicId = this.generatePublicId(file.originalname, applicationId);
             
-            // Write file buffer to disk
-            fs.writeFileSync(filePath, file.buffer);
+            // Determine resource type
+            const resourceType = file.mimetype?.startsWith('image/') ? 'image' : 
+                               file.mimetype?.startsWith('video/') ? 'video' : 'raw';
+            
+            // Upload to Cloudinary
+            const uploadResult = await new Promise((resolve, reject) => {
+                const uploadStream = cloudinary.uploader.upload_stream(
+                    {
+                        resource_type: resourceType,
+                        public_id: publicId,
+                        folder: `applications/${applicationId}`, // Organize by application
+                        use_filename: false,
+                        unique_filename: true,
+                    },
+                    (error, result) => {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            resolve(result);
+                        }
+                    }
+                );
+                
+                // Upload the buffer
+                uploadStream.end(file.buffer);
+            });
+
+            // Determine mime type correctly for different resource types
+            let mimeType = file.mimetype;
+            if (uploadResult.format) {
+                if (resourceType === 'image') {
+                    mimeType = `image/${uploadResult.format}`;
+                } else if (resourceType === 'raw') {
+                    // For PDFs and other raw files, keep original mimetype
+                    mimeType = file.mimetype || `application/${uploadResult.format}`;
+                }
+            }
             
             return {
-                fileName,
-                filePath,
+                fileName: path.basename(uploadResult.original_filename || file.originalname),
+                filePath: uploadResult.secure_url, // Cloudinary URL
+                cloudinaryPublicId: uploadResult.public_id,
                 originalName: file.originalname,
-                size: file.size,
-                mimeType: file.mimetype
+                size: uploadResult.bytes || file.size,
+                mimeType: mimeType
             };
         } catch (error) {
-            console.error('Error saving file:', error);
-            throw new Error('Failed to save file');
+            console.error('Error saving file to Cloudinary:', error);
+            throw new Error('Failed to save file to Cloudinary');
         }
     }
 
     // Save file information to database
     async saveFileToDatabase(fileInfo, applicationId, documentType) {
         try {
+            // Check if cloudinary_public_id column exists (for backward compatibility)
             const [result] = await pool.execute(
                 `INSERT INTO application_documents 
-                (application_id, document_type, document_name, file_path, file_size, mime_type) 
-                VALUES (?, ?, ?, ?, ?, ?)`,
+                (application_id, document_type, document_name, file_path, file_size, mime_type, cloudinary_public_id) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)`,
                 [
                     applicationId,
                     documentType,
                     fileInfo.originalName,
-                    fileInfo.filePath,
+                    fileInfo.filePath, // Cloudinary URL stored here
                     fileInfo.size,
-                    fileInfo.mimeType
+                    fileInfo.mimeType,
+                    fileInfo.cloudinaryPublicId || null
                 ]
             );
             return result.insertId;
         } catch (error) {
+            // If cloudinary_public_id column doesn't exist, try without it
+            if (error.message.includes('cloudinary_public_id')) {
+                const [result] = await pool.execute(
+                    `INSERT INTO application_documents 
+                    (application_id, document_type, document_name, file_path, file_size, mime_type) 
+                    VALUES (?, ?, ?, ?, ?, ?)`,
+                    [
+                        applicationId,
+                        documentType,
+                        fileInfo.originalName,
+                        fileInfo.filePath,
+                        fileInfo.size,
+                        fileInfo.mimeType
+                    ]
+                );
+                return result.insertId;
+            }
             console.error('Error saving file to database:', error);
             throw new Error('Failed to save file information to database');
         }
@@ -98,10 +162,11 @@ class FileStorageService {
                     fileName: fileInfo.fileName,
                     documentType,
                     size: fileInfo.size,
-                    mimeType: fileInfo.mimeType
+                    mimeType: fileInfo.mimeType,
+                    url: fileInfo.filePath // Cloudinary URL
                 });
                 
-                console.log(`File saved: ${file.fieldname} -> ${fileInfo.fileName}`);
+                console.log(`File saved to Cloudinary: ${file.fieldname} -> ${fileInfo.filePath}`);
             } catch (error) {
                 console.error(`Error processing file ${file.fieldname}:`, error);
                 // Continue processing other files even if one fails
@@ -125,50 +190,177 @@ class FileStorageService {
         }
     }
 
-    // Delete file from disk and database
+    // Delete file from Cloudinary and database
     async deleteFile(documentId) {
         try {
-            // Get file info from database
-            const [rows] = await pool.execute(
-                `SELECT file_path FROM application_documents WHERE id = ?`,
-                [documentId]
-            );
+            // Validate documentId
+            if (!documentId || isNaN(parseInt(documentId))) {
+                throw new Error('Invalid document ID');
+            }
+
+            const docId = parseInt(documentId);
             
-            if (rows.length === 0) {
-                throw new Error('File not found in database');
+            // Get file info from database
+            // Try with cloudinary_public_id first, fallback to just file_path if column doesn't exist
+            let rows;
+            let file;
+            let publicId = null;
+            
+            try {
+                [rows] = await pool.execute(
+                    `SELECT file_path, cloudinary_public_id FROM application_documents WHERE id = ?`,
+                    [docId]
+                );
+                if (rows.length > 0) {
+                    file = rows[0];
+                    publicId = file.cloudinary_public_id || null;
+                }
+            } catch (error) {
+                // If cloudinary_public_id column doesn't exist, try without it
+                if (error.message.includes('cloudinary_public_id')) {
+                    [rows] = await pool.execute(
+                        `SELECT file_path FROM application_documents WHERE id = ?`,
+                        [docId]
+                    );
+                    if (rows.length > 0) {
+                        file = rows[0];
+                        publicId = null;
+                    }
+                } else {
+                    throw error;
+                }
             }
             
-            const filePath = rows[0].file_path;
+            if (!rows || rows.length === 0) {
+                console.log(`Document with ID ${docId} not found in database`);
+                return false;
+            }
             
-            // Delete file from disk
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
+            // If publicId is not in database but file_path is a Cloudinary URL, extract it
+            if (!publicId && file.file_path && file.file_path.includes('cloudinary.com')) {
+                try {
+                    // Extract public_id from Cloudinary URL
+                    // Format: https://res.cloudinary.com/{cloud_name}/{resource_type}/upload/{version}/{public_id}.{format}
+                    const urlParts = file.file_path.split('/');
+                    const uploadIndex = urlParts.findIndex(part => part === 'upload');
+                    if (uploadIndex !== -1 && urlParts.length > uploadIndex + 2) {
+                        const pathAfterVersion = urlParts.slice(uploadIndex + 2).join('/');
+                        publicId = pathAfterVersion.replace(/\.[^/.]+$/, ''); // Remove file extension
+                        console.log(`Extracted public_id from URL: ${publicId}`);
+                    }
+                } catch (extractError) {
+                    console.error('Error extracting public_id from URL:', extractError);
+                }
+            }
+            
+            // Delete from Cloudinary if public_id exists
+            if (publicId) {
+                try {
+                    // Determine resource type
+                    const resourceType = file.file_path?.includes('/image/') ? 'image' : 
+                                       file.file_path?.includes('/video/') ? 'video' : 'raw';
+                    
+                    await cloudinary.uploader.destroy(publicId, {
+                        resource_type: resourceType
+                    });
+                    console.log(`File deleted from Cloudinary: ${publicId}`);
+                } catch (cloudinaryError) {
+                    console.error('Error deleting from Cloudinary:', cloudinaryError);
+                    // Continue with database deletion even if Cloudinary deletion fails
+                }
+            } else if (file.file_path && !file.file_path.includes('cloudinary.com')) {
+                // Fallback: Delete from local disk if not in Cloudinary
+                try {
+                    if (fs.existsSync(file.file_path)) {
+                        fs.unlinkSync(file.file_path);
+                        console.log(`File deleted from local disk: ${file.file_path}`);
+                    } else {
+                        console.log(`File not found on local disk: ${file.file_path}`);
+                    }
+                } catch (fsError) {
+                    console.error('Error deleting file from local disk:', fsError);
+                    // Continue with database deletion even if file deletion fails
+                }
             }
             
             // Delete record from database
-            await pool.execute(
+            const [deleteResult] = await pool.execute(
                 `DELETE FROM application_documents WHERE id = ?`,
-                [documentId]
+                [docId]
             );
             
+            if (deleteResult.affectedRows === 0) {
+                console.log(`No document deleted from database for ID: ${docId}`);
+                return false;
+            }
+            
+            console.log(`Document ${docId} deleted successfully`);
             return true;
         } catch (error) {
             console.error('Error deleting file:', error);
-            throw new Error('Failed to delete file');
+            throw new Error(`Failed to delete file: ${error.message}`);
         }
     }
 
     // Delete file by path (for bulk deletion)
     async deleteFileByPath(filePath) {
         try {
-            // Delete file from disk
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-                console.log(`Successfully deleted file: ${filePath}`);
-                return true;
+            // Check if it's a Cloudinary URL
+            if (filePath && filePath.includes('cloudinary.com')) {
+                // Try to get public_id from database
+                const [rows] = await pool.execute(
+                    `SELECT cloudinary_public_id FROM application_documents WHERE file_path = ?`,
+                    [filePath]
+                );
+                
+                if (rows.length > 0 && rows[0].cloudinary_public_id) {
+                    const publicId = rows[0].cloudinary_public_id;
+                    try {
+                        const resourceType = filePath.includes('/image/') ? 'image' : 
+                                           filePath.includes('/video/') ? 'video' : 'raw';
+                        
+                        await cloudinary.uploader.destroy(publicId, {
+                            resource_type: resourceType
+                        });
+                        console.log(`Successfully deleted file from Cloudinary: ${publicId}`);
+                        return true;
+                    } catch (cloudinaryError) {
+                        console.error('Error deleting from Cloudinary:', cloudinaryError);
+                        return false;
+                    }
+                } else {
+                    // Try to extract public_id from URL
+                    const urlParts = filePath.split('/');
+                    const uploadIndex = urlParts.findIndex(part => part === 'upload');
+                    if (uploadIndex !== -1 && urlParts.length > uploadIndex + 2) {
+                        const pathAfterVersion = urlParts.slice(uploadIndex + 2).join('/');
+                        const publicId = pathAfterVersion.replace(/\.[^/.]+$/, '');
+                        
+                        try {
+                            const resourceType = filePath.includes('/image/') ? 'image' : 
+                                               filePath.includes('/video/') ? 'video' : 'raw';
+                            
+                            await cloudinary.uploader.destroy(publicId, {
+                                resource_type: resourceType
+                            });
+                            console.log(`Successfully deleted file from Cloudinary: ${publicId}`);
+                            return true;
+                        } catch (cloudinaryError) {
+                            console.error('Error deleting from Cloudinary:', cloudinaryError);
+                            return false;
+                        }
+                    }
+                }
             } else {
-                console.log(`File not found on disk: ${filePath}`);
-                return false;
+                // Fallback: Delete from local disk
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                    console.log(`Successfully deleted file from disk: ${filePath}`);
+                    return true;
+                } else {
+                    console.log(`File not found: ${filePath}`);
+                    return false;
+                }
             }
         } catch (error) {
             console.error('Error deleting file by path:', error);
