@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button as ReactstrapButton, TabContent, TabPane, Nav, NavItem, NavLink } from 'reactstrap';
 import { TextField, Box, Typography, Divider, Paper, CardContent, CardHeader, IconButton, Chip, Alert, Select, MenuItem, FormControl, InputLabel, Button } from '@mui/material';
 import { Row, Col, Input, Label } from 'reactstrap';
-import { Close, Delete as DeleteIcon, Add } from '@mui/icons-material';
+import { Close, Delete as DeleteIcon } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -155,10 +155,33 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
       const response = await apiService.getQuestionAnswers(applicationId, 'reference');
       if (response.success) {
         const answers = response.data || [];
-        setQuestionAnswers(answers);
+        // Ensure we always have 5 boxes, fill empty ones if needed
+        const filledAnswers = [...answers];
+        while (filledAnswers.length < 5) {
+          filledAnswers.push({
+            question_id: '',
+            question_text: '',
+            answer_text: ''
+          });
+        }
+        // Keep only first 5
+        setQuestionAnswers(filledAnswers.slice(0, 5));
+      } else {
+        // Initialize with 5 empty boxes if no answers found
+        setQuestionAnswers(Array.from({ length: 5 }, () => ({
+          question_id: '',
+          question_text: '',
+          answer_text: ''
+        })));
       }
     } catch (error) {
       console.error('Error fetching question answers:', error);
+      // Initialize with 5 empty boxes on error
+      setQuestionAnswers(Array.from({ length: 5 }, () => ({
+        question_id: '',
+        question_text: '',
+        answer_text: ''
+      })));
     }
   };
 
@@ -222,16 +245,24 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
     }
 
     try {
-      const response = await apiService.deleteDocument(documentId);
+      // Ensure documentId is a number
+      const docId = typeof documentId === 'string' ? parseInt(documentId) : documentId;
+      
+      if (isNaN(docId)) {
+        toast.error('Invalid document ID');
+        return;
+      }
+
+      const response = await apiService.deleteDocument(docId);
       if (response.success) {
         toast.success('Document deleted successfully');
-        setExistingFiles(prev => prev.filter(file => file.id !== documentId));
+        setExistingFiles(prev => prev.filter(file => file.id !== docId && file.id !== documentId));
       } else {
         toast.error(response.message || 'Failed to delete document');
       }
     } catch (error) {
       console.error('Error deleting document:', error);
-      toast.error('Failed to delete document');
+      toast.error(error.message || 'Failed to delete document');
     }
   };
 
@@ -246,13 +277,7 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
     }
   };
 
-  const handleAddQuestion = () => {
-    setQuestionAnswers([...questionAnswers, {
-      question_id: '',
-      question_text: '',
-      answer_text: ''
-    }]);
-  };
+  // Removed handleAddQuestion - always show 5 boxes
 
   const handleQuestionSelect = async (index, questionId) => {
     const selectedQuestion = questions.find(q => q.id === questionId);
@@ -275,7 +300,13 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
   };
 
   const handleRemoveQuestion = (index) => {
-    const updatedAnswers = questionAnswers.filter((_, i) => i !== index);
+    // Reset the question at this index instead of removing it
+    const updatedAnswers = [...questionAnswers];
+    updatedAnswers[index] = {
+      question_id: '',
+      question_text: '',
+      answer_text: ''
+    };
     setQuestionAnswers(updatedAnswers);
   };
 
@@ -483,7 +514,7 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
             {/* Personal Information Tab */}
             <TabPane tabId="1">
               <Paper elevation={1} sx={{ borderRadius: 3, border: '1px solid #E5E7EA', mt: 2, p: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
                   Personal Information
                 </Typography>
                 <Row className="g-3">
@@ -582,7 +613,7 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
 
                 <Divider sx={{ my: 3 }} />
 
-                <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
                   Current Address
                 </Typography>
                 <Row className="g-3">
@@ -625,7 +656,7 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
             {/* Education Tab */}
             <TabPane tabId="2">
               <Paper elevation={1} sx={{ borderRadius: 3, border: '1px solid #E5E7EA', mt: 2, p: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
                   Education Information
                 </Typography>
                 <Row className="g-3">
@@ -703,7 +734,7 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
                   </Col>
                 </Row>
                 <Divider sx={{ my: 3 }} />
-                <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
                   Education Documents
                 </Typography>
                 <CustomFileUpload
@@ -730,7 +761,7 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
             {/* Reference Tab */}
             <TabPane tabId="3">
               <Paper elevation={1} sx={{ borderRadius: 3, border: '1px solid #E5E7EA', mt: 2, p: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
                   Reference 1
                 </Typography>
                 <Row className="g-3">
@@ -762,7 +793,7 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
                   </Col>
                 </Row>
                 <Divider sx={{ my: 3 }} />
-                <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
                   Reference 2
                 </Typography>
                 <Row className="g-3">
@@ -784,7 +815,7 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
                   </Col>
                 </Row>
                 <Divider sx={{ my: 3 }} />
-                <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
                   Reference 3
                 </Typography>
                 <Row className="g-3">
@@ -810,31 +841,24 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
                 {questions.length > 0 && (
                   <>
                     <Divider sx={{ my: 3 }} />
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63' }}>
-                        Additional Questions
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        startIcon={<Add />}
-                        onClick={handleAddQuestion}
-                        size="small"
-                      >
-                        Add Question
-                      </Button>
-                    </Box>
+                    <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
+                      Additional Questions (Select 5 questions to answer)
+                    </Typography>
 
                     {questionAnswers.map((qa, index) => (
                       <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #E5E7EA', borderRadius: 2 }}>
                         <Row className="g-3">
                           <Col xs={12} md={5}>
                             <FormControl fullWidth>
-                              <InputLabel>Select Question</InputLabel>
+                              <InputLabel>Select Question {index + 1}</InputLabel>
                               <Select
                                 value={qa.question_id || ''}
                                 onChange={(e) => handleQuestionSelect(index, e.target.value)}
-                                label="Select Question"
+                                label={`Select Question ${index + 1}`}
                               >
+                                <MenuItem value="">
+                                  <em>None</em>
+                                </MenuItem>
                                 {getAvailableQuestions(index).map((question) => (
                                   <MenuItem key={question.id} value={question.id}>
                                     {question.question_text}
@@ -853,23 +877,18 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
                               disabled={!qa.question_id}
                             />
                           </Col>
-                          <Col xs={12} md={1}>
+                          {/* <Col xs={12} md={1}>
                             <IconButton
                               onClick={() => handleRemoveQuestion(index)}
-                              sx={{ color: '#d32f2f' }}
+                              sx={{ color: '#d32f2f', mt: 1 }}
+                              title="Clear question"
                             >
                               <DeleteIcon />
                             </IconButton>
-                          </Col>
+                          </Col> */}
                         </Row>
                       </Box>
                     ))}
-
-                    {questionAnswers.length === 0 && (
-                      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                        No questions added. Click "Add Question" to add a question.
-                      </Typography>
-                    )}
                   </>
                 )}
               </Paper>
@@ -878,7 +897,7 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
             {/* Documents Tab */}
             <TabPane tabId="4">
               <Paper elevation={1} sx={{ borderRadius: 3, border: '1px solid #E5E7EA', mt: 2, p: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
                   Identity Documents
                 </Typography>
                 <Row className="g-3">
@@ -900,7 +919,7 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
                   </Col>
                 </Row>
                 <Divider sx={{ my: 3 }} />
-                <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
                   Document Uploads
                 </Typography>
                 <CustomFileUpload
@@ -963,7 +982,7 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
             {/* Employment Tab */}
             <TabPane tabId="5">
               <Paper elevation={1} sx={{ borderRadius: 3, border: '1px solid #E5E7EA', mt: 2, p: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
                   Employment Information
                 </Typography>
                 <Row className="g-3">
@@ -1055,7 +1074,7 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
                   </Col>
                 </Row>
                 <Divider sx={{ my: 3 }} />
-                <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
                   Employment Documents
                 </Typography>
                 <CustomFileUpload
@@ -1082,7 +1101,7 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
             {/* Tenancy Tab */}
             <TabPane tabId="6">
               <Paper elevation={1} sx={{ borderRadius: 3, border: '1px solid #E5E7EA', mt: 2, p: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
                   Tenancy Information
                 </Typography>
                 <Row className="g-3">
@@ -1127,7 +1146,7 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
             {/* Residency Tab */}
             <TabPane tabId="7">
               <Paper elevation={1} sx={{ borderRadius: 3, border: '1px solid #E5E7EA', mt: 2, p: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 500, color: '#3C2D63', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 500, color: 'var(--primary)', mb: 3 }}>
                   Residency Information
                 </Typography>
                 <Row className="g-3">
@@ -1200,7 +1219,7 @@ const EditApplication = ({ isOpen, toggle, applicationId, onUpdateComplete }) =>
             color="primary"
             onClick={handleSave}
             disabled={saving}
-            style={{ backgroundColor: '#4F378B', color: 'white' }}
+            style={{ backgroundColor: 'var(--primary)', color: 'white' }}
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </ReactstrapButton>
