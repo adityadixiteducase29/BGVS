@@ -35,7 +35,7 @@
 
 /* Primary variant */
 .custom-button.button-primary {
-  background-color: hsl(var(--primary));
+  background-color: var(--primary);
   color: hsl(var(--primary-foreground));
 }
 
@@ -57,7 +57,7 @@
 
 /* Secondary variant */
 .custom-button.button-secondary {
-  background-color: hsl(var(--secondary));
+  background-color: var(--secondary);
   color: hsl(var(--secondary-foreground));
 }
 
@@ -142,12 +142,12 @@
 /* Outline variant */
 .custom-button.button-outline {
   background-color: transparent;
-  color: hsl(var(--primary));
-  border: 2px solid hsl(var(--primary));
+  color: var(--primary);
+  border: 2px solid var(--primary);
 }
 
 .custom-button.button-outline:hover {
-  background-color: hsl(var(--primary));
+  background-color: var(--primary);
   color: hsl(var(--primary-foreground));
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
