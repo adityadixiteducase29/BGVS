@@ -31,13 +31,13 @@
 }
 
 .edit-application-modal .nav-tabs .nav-link:hover {
-  color: #4F378B;
-  border-bottom-color: #4F378B;
+  color: var(--primary);
+  border-bottom-color: var(--primary);
 }
 
 .edit-application-modal .nav-tabs .nav-link.active {
-  color: #4F378B;
-  border-bottom-color: #4F378B;
+  color: var(--primary);
+  border-bottom-color: var(--primary);
   font-weight: 500;
 }
 
@@ -51,7 +51,7 @@
 }
 
 .upload-box:hover {
-  border-color: #6750A4;
+  border-color: var(--primary);
   background-color: #F5F5F5;
 }
 
@@ -64,7 +64,7 @@
 
 .upload-title {
   font-weight: 500;
-  color: #3C2D63;
+  color: var(--primary);
   margin-bottom: 4px;
 }
 
