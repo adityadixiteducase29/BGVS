@@ -154,7 +154,7 @@ const Client = () => {
 
   const cards = [
     { label: 'Clients', value: clients.length, icon: <FaUsers /> },
-    { label: 'Total Verifications', value: clients.reduce((sum, client) => sum + (client.pending_count || 0), 0), icon: <FaFingerprint /> },
+    { label: 'Total Verified', value: clients.reduce((sum, client) => sum + (client.pending_count || 0), 0), icon: <FaFingerprint /> },
     { label: 'Pending', value: clients.reduce((sum, client) => sum + (client.pending_count || 0), 0), icon: <FaHourglassHalf /> },
     { label: 'This week', value: clients.filter(client => {
       const weekAgo = new Date();

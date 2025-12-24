@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter, Row, Col } from 'reactstrap';
-import { TextField, Checkbox, FormControlLabel } from '@mui/material';
+import { TextField, Checkbox, FormControlLabel, MenuItem, Select, FormControl, InputLabel, OutlinedInput } from '@mui/material';
 import { useAppSelector } from '../../../store/hooks';
 import apiService from '../../../services/api';
 import './AddClient.css';
@@ -12,6 +12,10 @@ const AddClient = ({ modal, toggle, onClientAdded }) => {
     clientEmail: '',
     password: ''
   });
+
+  const [selectedSubCompanies, setSelectedSubCompanies] = useState([]);
+  const [companiesDropdown, setCompaniesDropdown] = useState([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
 
   const [selectedServices, setSelectedServices] = useState({
     personal_information: false,
@@ -26,12 +30,43 @@ const AddClient = ({ modal, toggle, onClientAdded }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Fetch companies dropdown when modal opens
+  useEffect(() => {
+    if (modal) {
+      fetchCompaniesDropdown();
+    }
+  }, [modal]);
+
+  const fetchCompaniesDropdown = async () => {
+    try {
+      setLoadingCompanies(true);
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        apiService.setToken(token);
+        const result = await apiService.getCompaniesDropdown();
+        if (result.success) {
+          setCompaniesDropdown(result.data || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching companies dropdown:', error);
+    } finally {
+      setLoadingCompanies(false);
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleSubCompaniesChange = (e) => {
+    const value = e.target.value;
+    // Material-UI Select with multiple returns an array
+    setSelectedSubCompanies(typeof value === 'string' ? value.split(',') : value);
   };
 
   const handleServiceToggle = (service) => {
@@ -46,7 +81,7 @@ const AddClient = ({ modal, toggle, onClientAdded }) => {
       setLoading(true);
       setError('');
 
-      // Prepare data for API
+      // Prepare data for API (don't include parent_company_id - we'll assign sub-companies after creation)
       const clientData = {
         name: formData.clientName,
         email: formData.clientEmail,
@@ -63,11 +98,34 @@ const AddClient = ({ modal, toggle, onClientAdded }) => {
       // Set token in API service
       apiService.setToken(token);
 
-      // Make API call using the API service
+      // Create the company first
       const result = await apiService.request('/companies', {
         method: 'POST',
         body: JSON.stringify(clientData)
       });
+
+      if (!result.success || !result.data || !result.data.id) {
+        throw new Error(result.message || 'Failed to create company');
+      }
+
+      const newCompanyId = result.data.id;
+
+      // If sub-companies were selected, assign them to the new company
+      if (selectedSubCompanies.length > 0) {
+        const subCompanyIds = selectedSubCompanies.map(id => parseInt(id)).filter(id => !isNaN(id));
+
+        if (subCompanyIds.length > 0) {
+          const subCompaniesResult = await apiService.request(`/companies/${newCompanyId}/sub-companies`, {
+            method: 'PUT',
+            body: JSON.stringify({ subCompanyIds })
+          });
+
+          if (!subCompaniesResult.success) {
+            console.warn('Company created but failed to assign sub-companies:', subCompaniesResult.message);
+            // Don't throw error - company was created successfully, just sub-companies assignment failed
+          }
+        }
+      }
 
       // Success - close modal and reset form
       console.log('Client created successfully:', result.data);
@@ -78,6 +136,7 @@ const AddClient = ({ modal, toggle, onClientAdded }) => {
         clientEmail: '',
         password: ''
       });
+      setSelectedSubCompanies([]);
       setSelectedServices({
         personal_information: false,
         education: false,
@@ -123,7 +182,7 @@ const AddClient = ({ modal, toggle, onClientAdded }) => {
           <Row className='mb-4'>
             <Row className='mb-3'>
               <Col md={6}>
-              <TextField
+                <TextField
                   fullWidth
                   name="clientName"
                   value={formData.clientName}
@@ -137,7 +196,7 @@ const AddClient = ({ modal, toggle, onClientAdded }) => {
                 />
               </Col>
               <Col md={6}>
-              <TextField
+                <TextField
                   fullWidth
                   name="clientEmail"
                   value={formData.clientEmail}
@@ -153,7 +212,7 @@ const AddClient = ({ modal, toggle, onClientAdded }) => {
             </Row>
             <Row>
               <Col md={6}>
-              <TextField
+                <TextField
                   fullWidth
                   name="password"
                   value={formData.password}
@@ -166,7 +225,48 @@ const AddClient = ({ modal, toggle, onClientAdded }) => {
                   className="form-field"
                 />
               </Col>
+              <Col md={6}>
+                <FormControl fullWidth className="form-field company-select-field">
+                  <InputLabel id="company-select-label">Assign to Company</InputLabel>
+                  <Select
+                    labelId="company-select-label"
+                    id="company-select"
+                    multiple
+                    value={selectedSubCompanies}
+                    onChange={handleSubCompaniesChange}
+                    input={<OutlinedInput label="Assign to Company" />}
+                    disabled={loadingCompanies}
+                    renderValue={(selected) => {
+                      if (selected.length === 0) {
+                        return <em>None selected</em>;
+                      }
+                      return selected.map(id => {
+                        const company = companiesDropdown.find(c => c.id === id);
+                        return company ? company.name : id;
+                      }).join(', ');
+                    }}
+                  >
+                    {companiesDropdown.map((company) => (
+                      <MenuItem key={company.id} value={company.id}>
+                        {company.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Col>
             </Row>
+            {selectedSubCompanies.length > 0 && (
+              <Row className="mb-3">
+                <Col md={12}>
+                  <div style={{ marginTop: '8px' }}>
+                    <p style={{ fontSize: '12px', color: '#666' }}>
+                      <strong>{selectedSubCompanies.length}</strong> sub-compan{selectedSubCompanies.length === 1 ? 'y' : 'ies'} selected.
+                      These companies will be linked as sub-companies of the new company.
+                    </p>
+                  </div>
+                </Col>
+              </Row>
+            )}
           </Row>
           {/* Divider */}
           <div className="divider"></div>

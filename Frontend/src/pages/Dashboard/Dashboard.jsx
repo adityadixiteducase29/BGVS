@@ -19,7 +19,10 @@ const Dashboard = () => {
     clients: 0,
     total_verifications: 0,
     pending: 0,
-    this_week: 0
+    this_week: 0,
+    total_approved: 0,
+    total_rejected: 0,
+    total_employees: 0
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -51,7 +54,10 @@ const Dashboard = () => {
         clients: 0,
         total_verifications: 0,
         pending: 0,
-        this_week: 0
+        this_week: 0,
+        total_approved: 0,
+        total_rejected: 0,
+        total_employees: 0
       });
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -102,9 +108,11 @@ const Dashboard = () => {
 
   const cards = [
     { label: 'Clients', value: dashboardStats.clients, icon: <FaUsers /> },
-    { label: 'Total Verifications', value: dashboardStats.total_verifications, icon: <FaFingerprint /> },
+    { label: 'Total Verified', value: dashboardStats.total_verifications, icon: <FaFingerprint /> },
     { label: 'Pending', value: dashboardStats.pending, icon: <FaHourglassHalf /> },
-    { label: 'This week', value: dashboardStats.this_week, icon: <FaCalendarWeek /> },
+    { label: 'Total Approved', value: dashboardStats.total_approved, icon: <FaCalendarWeek /> },
+    { label: 'Total Rejected', value: dashboardStats.total_rejected, icon: <FaCalendarWeek /> },
+    { label: 'Total Employees', value: dashboardStats.total_employees, icon: <FaUsers /> },
   ];
 
   // Use API data directly without transformation

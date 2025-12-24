@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter, Row, Col } from 'reactstrap';
-import { TextField, Checkbox, FormControlLabel } from '@mui/material';
+import { TextField, Checkbox, FormControlLabel, MenuItem, Select, FormControl, InputLabel, Chip, OutlinedInput } from '@mui/material';
 import { useAppSelector } from '../../../store/hooks';
 import apiService from '../../../services/api';
 import './EditClient.css';
@@ -12,6 +12,10 @@ const EditClient = ({ modal, toggle, clientId, onClientUpdated }) => {
     clientEmail: '',
     password: ''
   });
+  
+  const [selectedSubCompanies, setSelectedSubCompanies] = useState([]);
+  const [companiesDropdown, setCompaniesDropdown] = useState([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
 
   const [selectedServices, setSelectedServices] = useState({
     personal_information: false,
@@ -31,8 +35,50 @@ const EditClient = ({ modal, toggle, clientId, onClientUpdated }) => {
   useEffect(() => {
     if (modal && clientId) {
       fetchClientData();
+      fetchCompaniesDropdown();
+      fetchSubCompanies();
     }
   }, [modal, clientId]);
+  
+  const fetchCompaniesDropdown = async () => {
+    try {
+      setLoadingCompanies(true);
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        apiService.setToken(token);
+        // Get all companies except the current one, but include current sub-companies
+        // so they can be displayed as selected even if they have a parent
+        const result = await apiService.getCompaniesDropdown(clientId, true);
+        if (result.success) {
+          setCompaniesDropdown(result.data || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching companies dropdown:', error);
+    } finally {
+      setLoadingCompanies(false);
+    }
+  };
+  
+  const fetchSubCompanies = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (token && clientId) {
+        apiService.setToken(token);
+        // Fetch all companies and filter to get current sub-companies
+        const result = await apiService.request('/companies', { method: 'GET' });
+        if (result.success && result.data) {
+          const subs = result.data.filter(company => 
+            company.parent_company_id === parseInt(clientId)
+          );
+          // Set selected sub-companies as array of IDs (convert to integers)
+          setSelectedSubCompanies(subs.map(sub => parseInt(sub.id)));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching sub-companies:', error);
+    }
+  };
 
   const fetchClientData = async () => {
     try {
@@ -120,6 +166,12 @@ const EditClient = ({ modal, toggle, clientId, onClientUpdated }) => {
       [service]: !prev[service]
     }));
   };
+  
+  const handleSubCompaniesChange = (e) => {
+    const value = e.target.value;
+    // Material-UI Select with multiple returns an array
+    setSelectedSubCompanies(typeof value === 'string' ? value.split(',') : value);
+  };
 
   const handleSave = async () => {
     try {
@@ -166,6 +218,17 @@ const EditClient = ({ modal, toggle, clientId, onClientUpdated }) => {
         throw new Error(servicesResult.message || 'Failed to update client services');
       }
 
+      // Update sub-companies (convert to integers)
+      const subCompanyIds = selectedSubCompanies.map(id => parseInt(id)).filter(id => !isNaN(id));
+      const subCompaniesResult = await apiService.request(`/companies/${clientId}/sub-companies`, {
+        method: 'PUT',
+        body: JSON.stringify({ subCompanyIds })
+      });
+
+      if (!subCompaniesResult.success) {
+        throw new Error(subCompaniesResult.message || 'Failed to update sub-companies');
+      }
+
       // Success - close modal and reset form
       console.log('Client updated successfully:', updateResult.data);
 
@@ -175,6 +238,7 @@ const EditClient = ({ modal, toggle, clientId, onClientUpdated }) => {
         clientEmail: '',
         password: ''
       });
+      setSelectedSubCompanies([]);
       setSelectedServices({
         personal_information: false,
         education: false,
@@ -273,7 +337,46 @@ const EditClient = ({ modal, toggle, clientId, onClientUpdated }) => {
                   className="form-field"
                 />
               </Col>
+              <Col md={6}>
+              <FormControl fullWidth className="form-field company-select-field">
+              <InputLabel id="company-select-label">Assign to Company</InputLabel>
+                <Select
+                  multiple
+                  value={selectedSubCompanies}
+                  onChange={handleSubCompaniesChange}
+                  input={<OutlinedInput label="Assign to Company" />}
+                  disabled={loadingCompanies}
+                  renderValue={(selected) => {
+                    if (selected.length === 0) {
+                      return <em>None selected</em>;
+                    }
+                    return selected.map(id => {
+                      const company = companiesDropdown.find(c => c.id === id);
+                      return company ? company.name : id;
+                    }).join(', ');
+                  }}
+                >
+                  {companiesDropdown.map((company) => (
+                    <MenuItem key={company.id} value={company.id}>
+                      {company.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              </Col>
             </Row>
+            {selectedSubCompanies.length > 0 && (
+              <Row className="mb-3">
+                <Col md={12}>
+                  <div style={{ marginTop: '16px' }}>
+                    <p style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+                      <strong>{selectedSubCompanies.length}</strong> sub-compan{selectedSubCompanies.length === 1 ? 'y' : 'ies'} selected. 
+                      These companies will be linked as sub-companies and their data will be visible when this company logs in.
+                    </p>
+                  </div>
+                </Col>
+              </Row>
+            )}
           </Row>
           {/* Divider */}
           <div className="divider"></div>

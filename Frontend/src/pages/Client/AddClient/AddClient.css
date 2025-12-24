@@ -10,21 +10,21 @@
   }
   
   .form-field:hover fieldset {
-    border-color: #6750A4 !important;
+    border-color: var(--primary) !important;
   }
   
   .form-field.Mui-focused fieldset {
-    border-color: #6750A4 !important;
+    border-color: var(--primary) !important;
   }
   
   /* Override Material-UI default focus styles */
   .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
-    border-color: #6750A4 !important;
+    border-color: var(--primary) !important;
     border-width: 2px !important;
   }
   
   .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
-    border-color: #6750A4 !important;
+    border-color: var(--primary) !important;
   }
   
   /* Select Field Styling */
@@ -38,11 +38,11 @@
   }
   
   .select-field:hover .MuiOutlinedInput-notchedOutline {
-    border-color: #6750A4 !important;
+    border-color: var(--primary) !important;
   }
   
   .select-field.Mui-focused .MuiOutlinedInput-notchedOutline {
-    border-color: #6750A4 !important;
+    border-color: var(--primary) !important;
   }
   
   /* DatePicker Styling */
@@ -51,23 +51,23 @@
   }
   
   .MuiDatePicker-root .MuiTextField-root:hover fieldset {
-    border-color: #6750A4 !important;
+    border-color: var(--primary) !important;
   }
   
   .MuiDatePicker-root .MuiTextField-root.Mui-focused fieldset {
-    border-color: #6750A4 !important;
+    border-color: var(--primary) !important;
   }
   
   /* Focused Label Styling */
   .form-field.Mui-focused .MuiInputLabel-root,
   .select-field.Mui-focused .MuiInputLabel-root,
   .MuiDatePicker-root .MuiTextField-root.Mui-focused .MuiInputLabel-root {
-    color: #6750A4 !important;
+    color: var(--primary) !important;
   }
   
   /* Override Material-UI default label focus styles */
   .MuiInputLabel-root.Mui-focused {
-    color: #6750A4 !important;
+    color: var(--primary) !important;
   }
   
   /* Input Label Styling */
@@ -89,13 +89,13 @@
   }
   
   .gender-label.Mui-focused {
-    color: #6750A4 !important;
+    color: var(--primary) !important;
   }
   
   /* Section Headers */
   .section-header {
     font-weight: 500;
-    color: #3C2D63;
+    color: var(--primary);
     font-size: 1rem !important;
     margin-bottom: 24px !important;
   }
@@ -108,11 +108,11 @@
   
   /* Checkbox Styling */
   .checkbox-field {
-    color: #6750A4;
+    color: var(--primary);
   }
   
   .checkbox-field.Mui-checked {
-    color: #6750A4;
+    color: var(--primary);
   }
   
   /* Date Picker Caption */
