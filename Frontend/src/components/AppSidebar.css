@@ -49,13 +49,16 @@
   align-items: center;
 }
 
-.sidebar-logo img {
-  width: 71px;
-  height: 71px;
+.sidebar-logo img,
+.sidebar-logo-image {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
   transition: all 0.3s ease;
 }
 
-.app-sidebar.collapsed .sidebar-logo img {
+.app-sidebar.collapsed .sidebar-logo img,
+.app-sidebar.collapsed .sidebar-logo-image {
   width: 40px;
   height: 40px;
 }
@@ -63,7 +66,7 @@
 .sidebar-toggle {
   background: none;
   border: none;
-  color: #3C2D63;
+  color: var(--primary);
   font-size: 1.2rem;
   cursor: pointer;
   padding: 8px;
@@ -81,7 +84,7 @@
 .sidebar-toggle-collapsed {
   background: none;
   border: none;
-  color: #3C2D63;
+  color: var(--primary);
   font-size: 1.2rem;
   cursor: pointer;
   /* padding: 8px; */
@@ -110,7 +113,7 @@
 }
 
 .sidebar-navigation-label {
-  color: #3C2D63;
+  color: var(--primary);
   font-size: 0.875rem;
   font-weight: 700;
   text-transform: none;
@@ -157,7 +160,7 @@
   border: none;
   outline: none;
   background: transparent;
-  color: #3C2D63;
+  color: var(--primary);
   font-family: 'Poppins', sans-serif;
   font-size: 0.875rem;
   line-height: 1.25;
@@ -173,8 +176,8 @@
 }
 
 .sidebar-menu-button.active {
-  background-color: #EADDFF;
-  color: #3C2D63;
+  background-color: var(--secondary);
+  color: var(--primary);
   font-weight: 600;
   padding: 25px 10px;
   height: 51px;
@@ -187,7 +190,7 @@
   justify-content: center;
   min-width: 20px;
   height: 20px;
-  color: #3C2D63;
+  color: black;
   flex-shrink: 0;
 }
 
@@ -196,7 +199,7 @@
   font-size: 0.875rem;
   line-height: 1.25;
   font-weight: 500;
-  color: inherit;
+  color: black;
   white-space: nowrap;
 }
 
@@ -273,7 +276,7 @@
 
 .user-name {
   font-weight: 500;
-  color: #4F378B;
+  color: var(--primary);
   line-height: 1.5;
   font-family: 'Poppins', sans-serif;
 }
@@ -333,7 +336,9 @@
 .logout-button .sidebar-label {
   font-weight: 500;
 }
-
+.logout-label {
+  color: red;
+}
 /* Collapsed state adjustments */
 .app-sidebar.collapsed .sidebar-user-info {
   padding: 0.5rem;
