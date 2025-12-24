@@ -51,7 +51,13 @@ class CompanyController {
     // Get all companies
     static async getAllCompanies(req, res) {
         try {
-            const companies = await Company.findAll();
+            // If user is a company (not admin), only show their company and sub-companies
+            let companyId = null;
+            if (req.user && req.user.user_type === 'company') {
+                companyId = req.user.id;
+            }
+            
+            const companies = await Company.findAll(companyId);
 
             res.status(200).json({
                 success: true,
@@ -162,6 +168,109 @@ class CompanyController {
 
         } catch (error) {
             console.error('Error updating company services:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Internal server error',
+                error: error.message
+            });
+        }
+    }
+
+    // Update sub-companies (assign multiple companies as sub-companies)
+    static async updateSubCompanies(req, res) {
+        try {
+            const { id } = req.params; // Parent company ID
+            const { subCompanyIds } = req.body; // Array of company IDs to assign as sub-companies
+
+            const { pool } = require('../config/database');
+
+            // Check if parent company exists
+            const parentCompany = await Company.findById(id);
+            if (!parentCompany) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Parent company not found'
+                });
+            }
+
+            // Check if parent_company_id column exists
+            const hasParentColumn = await Company.hasParentCompanyColumn();
+            if (!hasParentColumn) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Database migration required: Please run migration_add_parent_company.sql to add parent_company_id column.'
+                });
+            }
+
+            // Validate subCompanyIds is an array
+            if (!Array.isArray(subCompanyIds)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'subCompanyIds must be an array'
+                });
+            }
+
+            // Start transaction
+            const connection = await pool.getConnection();
+            await connection.beginTransaction();
+
+            try {
+                // First, remove all existing sub-companies (set their parent_company_id to NULL)
+                await connection.execute(
+                    'UPDATE companies SET parent_company_id = NULL WHERE parent_company_id = ?',
+                    [id]
+                );
+
+                // Then, assign new sub-companies
+                if (subCompanyIds.length > 0) {
+                    // Validate that all sub-company IDs exist and are not the parent itself
+                    const placeholders = subCompanyIds.map(() => '?').join(',');
+                    const [existingCompanies] = await connection.execute(
+                        `SELECT id FROM companies WHERE id IN (${placeholders}) AND id != ? AND is_active = TRUE`,
+                        [...subCompanyIds, id]
+                    );
+
+                    const existingIds = existingCompanies.map(c => c.id);
+                    const invalidIds = subCompanyIds.filter(id => !existingIds.includes(parseInt(id)));
+
+                    if (invalidIds.length > 0) {
+                        await connection.rollback();
+                        connection.release();
+                        return res.status(400).json({
+                            success: false,
+                            message: `Invalid company IDs: ${invalidIds.join(', ')}`
+                        });
+                    }
+
+                    // Update each sub-company to have this company as parent
+                    for (const subCompanyId of subCompanyIds) {
+                        await connection.execute(
+                            'UPDATE companies SET parent_company_id = ? WHERE id = ?',
+                            [id, subCompanyId]
+                        );
+                    }
+                }
+
+                await connection.commit();
+                connection.release();
+
+                res.status(200).json({
+                    success: true,
+                    message: 'Sub-companies updated successfully',
+                    data: {
+                        parentCompanyId: id,
+                        subCompanyIds: subCompanyIds
+                    }
+                });
+
+            } catch (error) {
+                await connection.rollback();
+                connection.release();
+                throw error;
+            }
+
+        } catch (error) {
+            console.error('Error updating sub-companies:', error);
             res.status(500).json({
                 success: false,
                 message: 'Internal server error',
@@ -429,7 +538,10 @@ class CompanyController {
                     COUNT(DISTINCT c.id) as total_clients,
                     COUNT(DISTINCT a.id) as total_verifications,
                     COUNT(DISTINCT CASE WHEN a.application_status = 'pending' THEN a.id END) as pending_verifications,
-                    COUNT(DISTINCT CASE WHEN a.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN a.id END) as this_week_verifications
+                    COUNT(DISTINCT CASE WHEN a.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN a.id END) as this_week_verifications,
+                    COUNT(DISTINCT CASE WHEN a.application_status = 'approved' THEN a.id END) as approved_verifications,
+                    COUNT(DISTINCT CASE WHEN a.application_status = 'rejected' THEN a.id END) as rejected_verifications,
+                    (SELECT COUNT(*) FROM users WHERE user_type = 'verifier' AND is_active = TRUE) as total_employees
                 FROM companies c
                 LEFT JOIN applications a ON c.id = a.company_id
                 WHERE c.is_active = TRUE
@@ -443,7 +555,10 @@ class CompanyController {
                     clients: parseInt(stats.total_clients) || 0,
                     total_verifications: parseInt(stats.total_verifications) || 0,
                     pending: parseInt(stats.pending_verifications) || 0,
-                    this_week: parseInt(stats.this_week_verifications) || 0
+                    this_week: parseInt(stats.this_week_verifications) || 0,
+                    total_approved: parseInt(stats.approved_verifications) || 0,
+                    total_rejected: parseInt(stats.rejected_verifications) || 0,
+                    total_employees: parseInt(stats.total_employees) || 0
                 }
             });
 
@@ -457,13 +572,57 @@ class CompanyController {
         }
     }
 
-    // Get companies dropdown
+    // Get companies dropdown (for parent company selection and sub-companies assignment)
     static async getCompaniesDropdown(req, res) {
         try {
+            const { excludeId, includeCurrentSubs, includeAll } = req.query; // Exclude current company, include current sub-companies, include all companies
             const companies = await Company.findAll();
             
+            // If includeAll is true, return all companies (for filters, etc.)
+            if (includeAll === 'true') {
+                const allCompanies = companies.filter(company => {
+                    if (excludeId && company.id === parseInt(excludeId)) {
+                        return false; // Exclude current company if provided
+                    }
+                    return true; // Include all other companies
+                });
+                
+                const dropdownData = allCompanies.map(company => ({
+                    id: company.id,
+                    label: company.name,
+                    value: company.id,
+                    name: company.name
+                }));
+
+                return res.status(200).json({
+                    success: true,
+                    data: dropdownData
+                });
+            }
+            
+            // Get current sub-companies if includeCurrentSubs is true
+            let currentSubCompanyIds = [];
+            if (includeCurrentSubs === 'true' && excludeId) {
+                const subCompanies = companies.filter(company => 
+                    company.parent_company_id === parseInt(excludeId)
+                );
+                currentSubCompanyIds = subCompanies.map(sc => sc.id);
+            }
+            
+            // Filter companies:
+            // 1. Exclude current company if provided
+            // 2. Include companies without parents (can be assigned as sub-companies)
+            // 3. Include current sub-companies even if they have a parent (so they can be shown as selected)
+            const availableCompanies = companies.filter(company => {
+                if (excludeId && company.id === parseInt(excludeId)) {
+                    return false; // Exclude current company
+                }
+                // Include if: no parent OR it's already a sub-company of the current company
+                return !company.parent_company_id || currentSubCompanyIds.includes(company.id);
+            });
+            
             // Transform companies to dropdown format
-            const dropdownData = companies.map(company => ({
+            const dropdownData = availableCompanies.map(company => ({
                 id: company.id,
                 label: company.name,
                 value: company.id,
