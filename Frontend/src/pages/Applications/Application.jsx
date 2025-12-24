@@ -6,6 +6,7 @@ import IconButton from '@mui/material/IconButton';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import GetAppIcon from '@mui/icons-material/GetApp';
+import { Select, MenuItem, FormControl, InputLabel, Box } from '@mui/material';
 import apiService from '@/services/api';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
@@ -25,8 +26,55 @@ const Application = () => {
   const [editModal, setEditModal] = useState(false);
   const [applicationToEdit, setApplicationToEdit] = useState(null);
   const [exporting, setExporting] = useState(false);
+  
+  // Filter states
+  const [selectedCompany, setSelectedCompany] = useState('');
+  const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [companies, setCompanies] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [loadingFilters, setLoadingFilters] = useState(false);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalApplications, setTotalApplications] = useState(0);
+  const pageSize = 10;
+  
   const toggleImportModal = () => setImportModal(!importModal);
   const toggleEditModal = () => setEditModal(!editModal);
+  // Fetch companies and employees for filters
+  useEffect(() => {
+    const fetchFilters = async () => {
+      try {
+        setLoadingFilters(true);
+        apiService.setToken(token);
+        
+        // Fetch companies and employees in parallel
+        // Use includeAll=true to get all companies for filtering (not just those without parents)
+        const [companiesResult, employeesResult] = await Promise.all([
+          apiService.getCompaniesDropdown(null, false, true),
+          apiService.getAllEmployees()
+        ]);
+        
+        if (companiesResult.success) {
+          setCompanies(companiesResult.data || []);
+        }
+        
+        if (employeesResult.success) {
+          setEmployees(employeesResult.data || []);
+        }
+      } catch (err) {
+        console.error('Error fetching filters:', err);
+      } finally {
+        setLoadingFilters(false);
+      }
+    };
+
+    if (token) {
+      fetchFilters();
+    }
+  }, [token]);
+
   // Fetch applications from API
   useEffect(() => {
     const fetchApplications = async () => {
@@ -35,10 +83,26 @@ const Application = () => {
         // Set the token for API requests
         apiService.setToken(token);
 
-        const response = await apiService.getAllApplications();
+        // Build filters object
+        const filters = {
+          page: currentPage,
+          limit: pageSize
+        };
+        if (selectedCompany) {
+          filters.company_id = selectedCompany;
+        }
+        if (selectedEmployee) {
+          filters.verifier_id = selectedEmployee;
+        }
+
+        const response = await apiService.getAllApplications(filters);
 
         if (response.success) {
           setApplications(response.data || []);
+          if (response.pagination) {
+            setTotalPages(response.pagination.totalPages || 1);
+            setTotalApplications(response.pagination.total || 0);
+          }
         } else {
           setError(response.message || 'Failed to fetch applications');
         }
@@ -53,7 +117,7 @@ const Application = () => {
     if (token) {
       fetchApplications();
     }
-  }, [token]);
+  }, [token, selectedCompany, selectedEmployee, currentPage]);
 
   const handleEditClick = (row) => {
     setApplicationToEdit(row);
@@ -66,9 +130,26 @@ const Application = () => {
       try {
         setLoading(true);
         apiService.setToken(token);
-        const response = await apiService.getAllApplications();
+        
+        // Build filters object with current pagination
+        const filters = {
+          page: currentPage,
+          limit: pageSize
+        };
+        if (selectedCompany) {
+          filters.company_id = selectedCompany;
+        }
+        if (selectedEmployee) {
+          filters.verifier_id = selectedEmployee;
+        }
+        
+        const response = await apiService.getAllApplications(filters);
         if (response.success) {
           setApplications(response.data || []);
+          if (response.pagination) {
+            setTotalPages(response.pagination.totalPages || 1);
+            setTotalApplications(response.pagination.total || 0);
+          }
         }
       } catch (err) {
         console.error('Error fetching applications:', err);
@@ -137,7 +218,7 @@ const Application = () => {
 
   const cards = [
     { label: 'Clients', value: 28, icon: <FaUsers /> },
-    { label: 'Total Verifications', value: 120, icon: <FaFingerprint /> },
+    { label: 'Total Verified', value: 120, icon: <FaFingerprint /> },
     { label: 'Pending', value: 96, icon: <FaHourglassHalf /> },
     { label: 'This week', value: 16, icon: <FaCalendarWeek /> },
   ];
@@ -260,11 +341,31 @@ const Application = () => {
     }
   ];
 
+  const handleCompanyFilterChange = (e) => {
+    setSelectedCompany(e.target.value);
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  const handleEmployeeFilterChange = (e) => {
+    setSelectedEmployee(e.target.value);
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  const handleClearFilters = () => {
+    setSelectedCompany('');
+    setSelectedEmployee('');
+    setCurrentPage(1); // Reset to first page when clearing filters
+  };
+
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+  };
+
   return (
     <div className="space-y-8">
       {/* Welcome Header */}
       <div className="flex justify-between items-center">
-        <h1 className="dashboard-title" style={{ color: "#4F378B" }}>
+        <h1 className="dashboard-title" style={{ color: "var(--primary)" }}>
           Applications
         </h1>
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -288,6 +389,62 @@ const Application = () => {
         </div>
       </div>
 
+      {/* Filters */}
+      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center', marginTop: '22px' }}>
+        <FormControl sx={{ minWidth: 200 }} size="small">
+          <InputLabel id="company-filter-label">Filter by Company</InputLabel>
+          <Select
+            labelId="company-filter-label"
+            id="company-filter"
+            value={selectedCompany}
+            onChange={handleCompanyFilterChange}
+            label="Filter by Company"
+            disabled={loadingFilters}
+          >
+            <MenuItem value="">
+              <em>All Companies</em>
+            </MenuItem>
+            {companies.map((company) => (
+              <MenuItem key={company.id} value={company.id}>
+                {company.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <FormControl sx={{ minWidth: 200 }} size="small">
+          <InputLabel id="employee-filter-label">Filter by Employee</InputLabel>
+          <Select
+            labelId="employee-filter-label"
+            id="employee-filter"
+            value={selectedEmployee}
+            onChange={handleEmployeeFilterChange}
+            label="Filter by Employee"
+            disabled={loadingFilters}
+          >
+            <MenuItem value="">
+              <em>All Employees</em>
+            </MenuItem>
+            {employees.map((employee) => (
+              <MenuItem key={employee.id} value={employee.id}>
+                {employee.name || `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.email}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        {(selectedCompany || selectedEmployee) && (
+          <Button
+            color="secondary"
+            size="small"
+            onClick={handleClearFilters}
+            style={{ height: '40px' }}
+          >
+            Clear Filters
+          </Button>
+        )}
+      </Box>
+
       <div>
         {loading ? (
           <div className="flex justify-center items-center h-64">
@@ -298,11 +455,24 @@ const Application = () => {
             <div className="text-lg text-red-600">{error}</div>
           </div>
         ) : (
-          <Datatable
-            tabledata={applications}
-            columns={columns}
-            pageSize={8}
-          />
+          <>
+            <Datatable
+              tabledata={applications}
+              columns={columns}
+              pageSize={pageSize}
+              paginationMode="server"
+              rowCount={totalApplications}
+              page={currentPage - 1}
+              onPageChange={handlePageChange}
+            />
+            {totalPages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mt: 2, mb: 2 }}>
+                <span style={{ fontSize: '14px', color: '#666' }}>
+                  Showing {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, totalApplications)} of {totalApplications} applications
+                </span>
+              </Box>
+            )}
+          </>
         )}
       </div>
 
@@ -373,7 +543,17 @@ const Application = () => {
             try {
               setLoading(true);
               apiService.setToken(token);
-              const response = await apiService.getAllApplications();
+              
+              // Build filters object
+              const filters = {};
+              if (selectedCompany) {
+                filters.company_id = selectedCompany;
+              }
+              if (selectedEmployee) {
+                filters.verifier_id = selectedEmployee;
+              }
+              
+              const response = await apiService.getAllApplications(filters);
               if (response.success) {
                 setApplications(response.data || []);
               }
