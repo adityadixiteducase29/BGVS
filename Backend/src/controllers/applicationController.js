@@ -152,23 +152,30 @@ class ApplicationController {
         }
     }
 
-    // Get all applications (Admin only)
+    // Get all applications (Admin only) with pagination
     static async getAllApplications(req, res) {
         try {
-            const { status, client_id, verifier_id, search, limit } = req.query;
+            const { status, client_id, company_id, verifier_id, search, page, limit } = req.query;
             
             const filters = {};
             if (status) filters.status = status;
-            if (client_id) filters.client_id = client_id;
+            // Support both client_id (legacy) and company_id
+            if (company_id) {
+                filters.company_id = company_id;
+            } else if (client_id) {
+                filters.company_id = client_id; // Map client_id to company_id
+            }
             if (verifier_id) filters.verifier_id = verifier_id;
             if (search) filters.search = search;
-            if (limit) filters.limit = limit;
+            if (page) filters.page = page;
+            filters.limit = limit || 10; // Default to 10 per page
 
-            const applications = await Application.findAll(filters);
+            const result = await Application.findAll(filters);
 
             res.status(200).json({
                 success: true,
-                data: applications
+                data: result.data,
+                pagination: result.pagination
             });
 
         } catch (error) {
@@ -575,9 +582,18 @@ class ApplicationController {
     static async deleteDocument(req, res) {
         try {
             const { documentId } = req.params;
+            
+            // Validate documentId
+            if (!documentId || isNaN(parseInt(documentId))) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid document ID'
+                });
+            }
+
             const fileStorageService = new FileStorageService();
 
-            const deleted = await fileStorageService.deleteFile(documentId);
+            const deleted = await fileStorageService.deleteFile(parseInt(documentId));
 
             if (deleted) {
                 res.status(200).json({
@@ -595,8 +611,8 @@ class ApplicationController {
             console.error('Error deleting document:', error);
             res.status(500).json({
                 success: false,
-                message: 'Internal server error',
-                error: error.message
+                message: error.message || 'Internal server error',
+                error: process.env.NODE_ENV === 'development' ? error.message : 'Failed to delete document'
             });
         }
     }
