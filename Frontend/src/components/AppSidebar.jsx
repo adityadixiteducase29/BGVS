@@ -134,7 +134,7 @@ const AppSidebar = ({ userType, user, onLogout }) => {
     <aside className={`app-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className={isCollapsed ? 'sidebar-header-collapsed' : 'sidebar-header'}>
         <div className={isCollapsed ? 'sidebar-logo-collapsed' : 'sidebar-logo'}>
-          <img src="/Logo.svg" alt="Logo" />
+          <img src="/Profile.jpeg" alt="Logo" className="sidebar-logo-image"/>
         </div>
         <button
           className={`sidebar-toggle ${isCollapsed ? 'sidebar-toggle-collapsed' : ''}`}
@@ -190,10 +190,10 @@ const AppSidebar = ({ userType, user, onLogout }) => {
           title="Logout"
         >
           <span className="sidebar-icon">
-            <LogoutIcon />
+            <LogoutIcon color='red' className='logout-label'/>
           </span>
           {!isCollapsed && (
-            <span className="sidebar-label">Logout</span>
+            <span className="sidebar-label logout-label">Logout</span>
           )}
         </button>
       </div>
