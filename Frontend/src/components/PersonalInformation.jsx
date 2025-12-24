@@ -23,7 +23,7 @@ export function PersonalInformation() {
               <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-primary/20 to-primary-glow/10 flex items-center justify-center">
                 <img src="/icons/user-verification-icon.svg" alt="Verification" className="w-5 h-5" />
               </div>
-              <span className="text-sm font-medium text-muted-foreground">Total Verifications</span>
+              <span className="text-sm font-medium text-muted-foreground">Total Verified</span>
             </div>
             <div>
               <span className="text-2xl font-bold text-primary">{userData.totalVerifications}</span>
