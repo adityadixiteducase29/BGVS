@@ -350,9 +350,23 @@ class ApiService {
     }
 
     // Company Dropdown Methods
-    async getCompaniesDropdown() {
+    async getCompaniesDropdown(excludeId = null, includeCurrentSubs = false, includeAll = false) {
         try {
-            return await this.request('/companies/dropdown');
+            let endpoint = '/companies/dropdown';
+            const params = [];
+            if (excludeId) {
+                params.push(`excludeId=${excludeId}`);
+            }
+            if (includeCurrentSubs) {
+                params.push(`includeCurrentSubs=true`);
+            }
+            if (includeAll) {
+                params.push(`includeAll=true`);
+            }
+            if (params.length > 0) {
+                endpoint += `?${params.join('&')}`;
+            }
+            return await this.request(endpoint);
         } catch (error) {
             return {
                 success: false,
