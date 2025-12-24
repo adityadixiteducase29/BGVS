@@ -29,9 +29,28 @@ function CustomPagination() {
 
 
 
-const Datatable = ({ tabledata, columns, pageSize = 8, ...rest }) => {
-  // Use autoHeight when there are fewer rows than pageSize
-  const shouldUseAutoHeight = tabledata.length <= pageSize;
+const Datatable = ({ tabledata, columns, pageSize = 8, paginationMode = 'client', rowCount, page, onPageChange, ...rest }) => {
+  // Use autoHeight when there are fewer rows than pageSize (only for client-side pagination)
+  const shouldUseAutoHeight = paginationMode === 'client' && tabledata.length <= pageSize;
+  
+  // For server-side pagination, use the provided page and rowCount
+  const paginationProps = paginationMode === 'server' ? {
+    paginationMode: 'server',
+    rowCount: rowCount || tabledata.length,
+    paginationModel: {
+      page: page !== undefined ? page : 0,
+      pageSize: pageSize
+    },
+    onPaginationModelChange: (model) => {
+      if (onPageChange) {
+        onPageChange(null, model.page + 1);
+      }
+    },
+    pageSizeOptions: [pageSize]
+  } : {
+    pageSize: pageSize,
+    pagination: true
+  };
   
   return (
     <div className="datatable-container">
@@ -39,8 +58,6 @@ const Datatable = ({ tabledata, columns, pageSize = 8, ...rest }) => {
         className="datatable-grid"
         rows={tabledata}
         columns={columns}
-        pageSize={pageSize}
-        pagination
         autoHeight={shouldUseAutoHeight}
         slots={{ pagination: CustomPagination }}
         disableColumnMenu
@@ -51,6 +68,7 @@ const Datatable = ({ tabledata, columns, pageSize = 8, ...rest }) => {
         disableColumnSorting
         disableRowSelectionOnClick
         hideFooterSelectedRowCount
+        {...paginationProps}
         {...rest}
       />
     </div>
