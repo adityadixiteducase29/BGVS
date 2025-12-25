@@ -454,7 +454,9 @@ const ReviewApplication = () => {
       // Add company ID
       submitData.append('company_id', companyId)
 
-      const response = await fetch(`/api/applications/companies/${companyId}/applications`, {
+      // Use API_BASE_URL from environment or fallback
+      const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api';
+      const response = await fetch(`${API_BASE_URL}/applications/companies/${companyId}/applications`, {
         method: 'POST',
         body: submitData
       })

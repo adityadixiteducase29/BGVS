@@ -101,7 +101,7 @@ class FileStorageService {
     // Save file information to database
     async saveFileToDatabase(fileInfo, applicationId, documentType) {
         try {
-            // Check if cloudinary_public_id column exists (for backward compatibility)
+            // Try with cloudinary_public_id first (for newer databases)
             const [result] = await pool.execute(
                 `INSERT INTO application_documents 
                 (application_id, document_type, document_name, file_path, file_size, mime_type, cloudinary_public_id) 
@@ -120,23 +120,45 @@ class FileStorageService {
         } catch (error) {
             // If cloudinary_public_id column doesn't exist, try without it
             if (error.message.includes('cloudinary_public_id')) {
-                const [result] = await pool.execute(
-                    `INSERT INTO application_documents 
-                    (application_id, document_type, document_name, file_path, file_size, mime_type) 
-                    VALUES (?, ?, ?, ?, ?, ?)`,
-                    [
-                        applicationId,
-                        documentType,
-                        fileInfo.originalName,
-                        fileInfo.filePath,
-                        fileInfo.size,
-                        fileInfo.mimeType
-                    ]
-                );
-                return result.insertId;
+                try {
+                    const [result] = await pool.execute(
+                        `INSERT INTO application_documents 
+                        (application_id, document_type, document_name, file_path, file_size, mime_type) 
+                        VALUES (?, ?, ?, ?, ?, ?)`,
+                        [
+                            applicationId,
+                            documentType,
+                            fileInfo.originalName,
+                            fileInfo.filePath,
+                            fileInfo.size,
+                            fileInfo.mimeType
+                        ]
+                    );
+                    return result.insertId;
+                } catch (innerError) {
+                    console.error('Error saving file to database (without cloudinary_public_id):', innerError);
+                    throw new Error(`Failed to save file information to database: ${innerError.message}`);
+                }
             }
+            
+            // Check if it's an ENUM constraint violation (document_type issue)
+            if (error.message.includes('document_type') || 
+                error.message.includes('Data truncated') || 
+                error.message.includes('Invalid enum value')) {
+                console.error('❌ ENUM constraint violation for document_type:', documentType);
+                console.error('   This usually means the document_type column is still an ENUM.');
+                console.error('   Please run migration_fix_application_documents.sql to change it to VARCHAR.');
+                throw new Error(`Document type '${documentType}' is not allowed. Please run migration_fix_application_documents.sql to fix the table structure.`);
+            }
+            
             console.error('Error saving file to database:', error);
-            throw new Error('Failed to save file information to database');
+            console.error('Error details:', {
+                code: error.code,
+                errno: error.errno,
+                sqlState: error.sqlState,
+                sqlMessage: error.sqlMessage
+            });
+            throw new Error(`Failed to save file information to database: ${error.message}`);
         }
     }
 
