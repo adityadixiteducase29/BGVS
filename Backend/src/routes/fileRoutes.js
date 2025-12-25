@@ -203,7 +203,7 @@ router.get('/:fileId/proxy', authenticateFileAccess, async (req, res) => {
                     });
                 }
                 
-                // Get the file buffer
+                // Get the file buffer - ensure we get the complete response
                 const buffer = await cloudinaryResponse.arrayBuffer();
                 console.log(`✅ Received ${buffer.byteLength} bytes from Cloudinary`);
                 
@@ -215,24 +215,47 @@ router.get('/:fileId/proxy', authenticateFileAccess, async (req, res) => {
                 if (header !== '%PDF') {
                     console.error(`❌ Invalid PDF structure from Cloudinary. Header: ${header}`);
                     console.error('First 20 bytes:', Array.from(uint8Array.slice(0, 20)).map(b => String.fromCharCode(b)).join(''));
+                    console.error('First 20 bytes (hex):', Array.from(uint8Array.slice(0, 20)).map(b => b.toString(16).padStart(2, '0')).join(' '));
+                    
+                    // Check if it's an HTML error page from Cloudinary
+                    const textStart = String.fromCharCode.apply(null, Array.from(uint8Array.slice(0, 100)));
+                    if (textStart.includes('<html') || textStart.includes('<!DOCTYPE')) {
+                        console.error('❌ Cloudinary returned HTML error page instead of PDF');
+                        return res.status(500).json({
+                            success: false,
+                            message: 'Cloudinary returned an error page instead of the PDF file'
+                        });
+                    }
+                    
                     // Still send it - might be a valid file with different header
                     console.warn('⚠️ Proceeding despite invalid header - might be valid file');
                 } else {
                     console.log(`✅ Valid PDF structure confirmed (starts with %PDF)`);
                 }
                 
+                // Ensure buffer is not empty
+                if (buffer.byteLength === 0) {
+                    console.error('❌ Received empty buffer from Cloudinary');
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Received empty file from Cloudinary'
+                    });
+                }
+                
                 // Set appropriate headers - IMPORTANT: Set Content-Type BEFORE sending
                 res.setHeader('Content-Type', file.mime_type || 'application/pdf');
-                res.setHeader('Content-Disposition', `inline; filename="${file.document_name}"`);
+                res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(file.document_name)}"`);
                 res.setHeader('Content-Length', buffer.byteLength);
                 res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
                 res.setHeader('Access-Control-Allow-Origin', '*'); // Allow CORS for proxy
                 res.setHeader('Access-Control-Allow-Methods', 'GET');
-                res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+                res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+                res.setHeader('Accept-Ranges', 'bytes'); // Support range requests for PDF.js
                 
-                // Send the buffer
-                res.send(Buffer.from(buffer));
-                console.log(`✅ PDF sent successfully: ${buffer.byteLength} bytes`);
+                // Convert to Node.js Buffer and send
+                const nodeBuffer = Buffer.from(buffer);
+                res.send(nodeBuffer);
+                console.log(`✅ PDF sent successfully: ${nodeBuffer.length} bytes`);
             } catch (fetchError) {
                 console.error('❌ Error fetching from Cloudinary:', fetchError);
                 console.error('Error details:', {

@@ -98,10 +98,22 @@ const DocumentPreview = ({ isOpen, toggle, documentUrl, documentName, documentTy
   }), []);
 
   const renderDocumentPreview = () => {
-    const urlToUse = actualUrl || documentUrl;
-    const fileType = getFileType(urlToUse, documentName);
+    // Don't use documentUrl if it's an API endpoint - wait for actualUrl or pdfFile
+    const isApiEndpoint = documentUrl && (documentUrl.includes('/api/files/') || documentUrl.includes('/files/'));
+    const urlToUse = actualUrl || (isApiEndpoint ? null : documentUrl);
+    const fileType = getFileType(urlToUse || documentUrl, documentName);
     
-    if (!urlToUse) {
+    // If we're still loading and it's an API endpoint, show loading state
+    if (isApiEndpoint && !actualUrl && !pdfFile && loading) {
+      return (
+        <div className="document-preview-error">
+          <div className="loading-spinner"></div>
+          <p>Loading document...</p>
+        </div>
+      );
+    }
+    
+    if (!urlToUse && !pdfFile) {
       return (
         <div className="document-preview-error">
           <Visibility sx={{ fontSize: 48, color: '#ccc' }} />
@@ -164,14 +176,17 @@ const DocumentPreview = ({ isOpen, toggle, documentUrl, documentName, documentTy
                     if (urlToUse?.includes('/proxy') && !urlToUse.includes('cloudinary.com')) {
                       console.log('⚠️ Proxy failed, trying to get direct Cloudinary URL...');
                       // Extract fileId from proxy URL
-                      const fileIdMatch = urlToUse.match(/\/api\/files\/(\d+)\/proxy/);
+                      const fileIdMatch = urlToUse.match(/\/files\/(\d+)\/proxy/) || urlToUse.match(/\/api\/files\/(\d+)\/proxy/);
                       if (fileIdMatch && fileIdMatch[1]) {
                         const fileId = fileIdMatch[1];
                         const token = localStorage.getItem('auth_token');
+                        const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api';
                         // Try to get the direct URL from the main endpoint
-                        fetch(`/api/files/${fileId}?token=${encodeURIComponent(token)}`, {
+                        fetch(`${API_BASE_URL}/files/${fileId}?token=${encodeURIComponent(token)}`, {
                           method: 'GET',
-                          credentials: 'include'
+                          headers: {
+                            'Authorization': token ? `Bearer ${token}` : ''
+                          }
                         })
                         .then(response => response.json())
                         .then(data => {
@@ -320,18 +335,35 @@ const DocumentPreview = ({ isOpen, toggle, documentUrl, documentName, documentTy
       
       // Check if it's an API endpoint (not a direct URL)
       if (documentUrl.startsWith('/api/files/') || documentUrl.includes('/api/files/')) {
+        // Use API_BASE_URL for fetching
+        const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api';
+        const token = localStorage.getItem('auth_token');
+        
+        // Normalize the documentUrl to use API_BASE_URL
+        let normalizedUrl = documentUrl;
+        if (documentUrl.startsWith('/api/')) {
+          normalizedUrl = `${API_BASE_URL}${documentUrl.substring(4)}`; // Remove '/api' and prepend API_BASE_URL
+        } else if (documentUrl.startsWith('/files/')) {
+          normalizedUrl = `${API_BASE_URL}${documentUrl}`;
+        }
+        
+        console.log('📥 Fetching from normalized URL:', normalizedUrl);
+        
         // Fetch the file URL from backend
-        fetch(documentUrl, {
+        fetch(normalizedUrl, {
           method: 'GET',
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
           credentials: 'include'
         })
-        .then(response => {
+        .then(async response => {
           console.log('📥 Response received:', response.status, response.headers.get('content-type'));
           
           // Check if response is JSON (Cloudinary URL) or a redirect
-          const contentType = response.headers.get('content-type');
+          const contentType = response.headers.get('content-type') || '';
           
-          if (contentType && contentType.includes('application/json')) {
+          if (contentType.includes('application/json')) {
             // Backend returned JSON with URL
             return response.json().then(data => {
               console.log('📋 JSON response:', data);
@@ -349,23 +381,58 @@ const DocumentPreview = ({ isOpen, toggle, documentUrl, documentName, documentTy
                   setPdfLoading(true);
                   
                   // Use proxy URL to avoid CORS and ensure valid PDF structure
-                  // Extract fileId from documentUrl
-                  const fileIdMatch = documentUrl.match(/\/api\/files\/(\d+)/);
+                  // Extract fileId from documentUrl (handle both /api/files/ and /files/ patterns)
+                  const fileIdMatch = documentUrl.match(/\/files\/(\d+)/) || documentUrl.match(/\/api\/files\/(\d+)/);
                   if (fileIdMatch && fileIdMatch[1]) {
                     const fileId = fileIdMatch[1];
-                    const token = localStorage.getItem('auth_token');
-                    const proxyUrl = `${window.location.origin}/api/files/${fileId}/proxy?token=${encodeURIComponent(token)}`;
+                    const proxyUrl = `${API_BASE_URL}/files/${fileId}/proxy?token=${encodeURIComponent(token)}`;
                     console.log('📄 Using proxy URL for PDF (avoids CORS issues):', proxyUrl);
-                    setActualUrl(proxyUrl);
+                    
+                    // Fetch PDF as blob first to ensure it's valid before passing to react-pdf
+                    fetch(proxyUrl, {
+                      method: 'GET',
+                      headers: {
+                        'Authorization': token ? `Bearer ${token}` : ''
+                      }
+                    })
+                    .then(response => {
+                      if (!response.ok) {
+                        throw new Error(`Failed to fetch PDF: ${response.status} ${response.statusText}`);
+                      }
+                      return response.blob();
+                    })
+                    .then(blob => {
+                      // Validate blob is actually a PDF
+                      if (blob.type !== 'application/pdf' && !blob.type.includes('pdf')) {
+                        console.warn('⚠️ Blob type is not PDF:', blob.type);
+                      }
+                      const blobUrl = URL.createObjectURL(blob);
+                      blobUrlToCleanup = blobUrl;
+                      setPdfFile(blob); // Use blob object for react-pdf
+                      setActualUrl(blobUrl);
+                      setLoading(false);
+                      setPdfLoading(false);
+                      if (timeoutId) clearTimeout(timeoutId);
+                    })
+                    .catch(blobError => {
+                      console.error('❌ Error fetching PDF as blob:', blobError);
+                      // Fallback to direct Cloudinary URL
+                      console.log('📄 Falling back to direct Cloudinary URL');
+                      setActualUrl(cloudinaryUrl);
+                      setPdfFile(null);
+                      setLoading(false);
+                      setPdfLoading(false);
+                      if (timeoutId) clearTimeout(timeoutId);
+                    });
                   } else {
                     // Fallback to direct URL if we can't get fileId
                     console.log('📄 Using Cloudinary URL directly:', cloudinaryUrl);
                     setActualUrl(cloudinaryUrl);
+                    setPdfFile(null);
+                    setLoading(false);
+                    setPdfLoading(false);
+                    if (timeoutId) clearTimeout(timeoutId);
                   }
-                  setPdfFile(null);
-                  setLoading(false);
-                  setPdfLoading(false); // Let react-pdf handle the loading
-                  if (timeoutId) clearTimeout(timeoutId);
                 } else {
                   // For images, use direct URL
                   setActualUrl(cloudinaryUrl);
@@ -378,22 +445,71 @@ const DocumentPreview = ({ isOpen, toggle, documentUrl, documentName, documentTy
               }
             });
           } else {
-            // It's a redirect or direct file - use the final URL
-            if (response.redirected) {
-              console.log('🔄 Redirected to:', response.url);
-              setActualUrl(response.url);
+            // Response is not JSON - might be a direct file stream or error
+            // Try to read as text first to see what we got
+            return response.text().then(text => {
+              console.log('📄 Response is not JSON, checking content...');
+              console.log('First 100 chars:', text.substring(0, 100));
+              
+              // Check if it's actually JSON but Content-Type was wrong
+              try {
+                const jsonData = JSON.parse(text);
+                if (jsonData.success && jsonData.url) {
+                  console.log('✅ Found JSON data despite wrong Content-Type');
+                  const cloudinaryUrl = jsonData.url;
+                  const isPDF = jsonData.mimeType === 'application/pdf' || 
+                              documentName?.toLowerCase().endsWith('.pdf');
+                  
+                  if (isPDF && cloudinaryUrl.includes('cloudinary.com')) {
+                    // Use proxy for PDF
+                    const fileIdMatch = documentUrl.match(/\/files\/(\d+)/) || documentUrl.match(/\/api\/files\/(\d+)/);
+                    if (fileIdMatch && fileIdMatch[1]) {
+                      const fileId = fileIdMatch[1];
+                      const proxyUrl = `${API_BASE_URL}/files/${fileId}/proxy?token=${encodeURIComponent(token)}`;
+                      console.log('📄 Using proxy URL for PDF:', proxyUrl);
+                      
+                      // Fetch as blob
+                      return fetch(proxyUrl, {
+                        method: 'GET',
+                        headers: {
+                          'Authorization': token ? `Bearer ${token}` : ''
+                        }
+                      })
+                      .then(proxyResponse => proxyResponse.blob())
+                      .then(blob => {
+                        const blobUrl = URL.createObjectURL(blob);
+                        blobUrlToCleanup = blobUrl;
+                        setPdfFile(blob);
+                        setActualUrl(blobUrl);
+                        setLoading(false);
+                        setPdfLoading(false);
+                        if (timeoutId) clearTimeout(timeoutId);
+                      });
+                    }
+                  }
+                  setActualUrl(cloudinaryUrl);
+                  setLoading(false);
+                  if (timeoutId) clearTimeout(timeoutId);
+                  return;
+                }
+              } catch (e) {
+                // Not JSON, continue to blob handling
+              }
+              
+              // It's a direct file stream - convert text back to blob
+              const blob = new Blob([text], { type: response.headers.get('content-type') || 'application/pdf' });
+              const blobUrl = URL.createObjectURL(blob);
+              blobUrlToCleanup = blobUrl;
+              setPdfFile(blob);
+              setActualUrl(blobUrl);
               setLoading(false);
               if (timeoutId) clearTimeout(timeoutId);
-            } else {
-              // It's a direct file stream - use blob URL
-              return response.blob().then(blob => {
-                const blobUrl = URL.createObjectURL(blob);
-                blobUrlToCleanup = blobUrl;
-                setActualUrl(blobUrl);
-                setLoading(false);
-                if (timeoutId) clearTimeout(timeoutId);
-              });
-            }
+            }).catch(err => {
+              console.error('❌ Error processing non-JSON response:', err);
+              setError('Failed to load document. Invalid response format.');
+              setLoading(false);
+              if (timeoutId) clearTimeout(timeoutId);
+            });
           }
         })
         .catch(err => {
