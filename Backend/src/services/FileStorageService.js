@@ -85,10 +85,9 @@ class FileStorageService {
     // Save file information to database
     async saveFileToDatabase(fileInfo, applicationId, documentType) {
         try {
-            // Try with s3_key first (for newer databases), fallback to cloudinary_public_id for backward compatibility
             const [result] = await pool.execute(
                 `INSERT INTO application_documents 
-                (application_id, document_type, document_name, file_path, file_size, mime_type, cloudinary_public_id) 
+                (application_id, document_type, document_name, file_path, file_size, mime_type, s3_key) 
                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
                 [
                     applicationId,
@@ -97,13 +96,13 @@ class FileStorageService {
                     fileInfo.filePath, // S3 URL stored here
                     fileInfo.size,
                     fileInfo.mimeType,
-                    fileInfo.s3Key || null // Store S3 key in cloudinary_public_id column for backward compatibility
+                    fileInfo.s3Key || null // Store S3 key
                 ]
             );
             return result.insertId;
         } catch (error) {
-            // If cloudinary_public_id column doesn't exist, try without it
-            if (error.message.includes('cloudinary_public_id')) {
+            // If s3_key column doesn't exist, try without it (for older databases)
+            if (error.message.includes('s3_key')) {
                 try {
                     const [result] = await pool.execute(
                         `INSERT INTO application_documents 
@@ -120,7 +119,7 @@ class FileStorageService {
                     );
                     return result.insertId;
                 } catch (innerError) {
-                    console.error('Error saving file to database (without cloudinary_public_id):', innerError);
+                    console.error('Error saving file to database (without s3_key):', innerError);
                     throw new Error(`Failed to save file information to database: ${innerError.message}`);
                 }
             }
@@ -205,9 +204,9 @@ class FileStorageService {
 
     // Extract S3 key from file path or database
     extractS3Key(file) {
-        // First try to get from cloudinary_public_id column (we're reusing it for S3 key)
-        if (file.cloudinary_public_id) {
-            return file.cloudinary_public_id;
+        // First try to get from s3_key column
+        if (file.s3_key) {
+            return file.s3_key;
         }
         
         // If file_path is an S3 URL, extract the key
@@ -246,15 +245,15 @@ class FileStorageService {
             
             try {
                 [rows] = await pool.execute(
-                    `SELECT file_path, cloudinary_public_id FROM application_documents WHERE id = ?`,
+                    `SELECT file_path, s3_key FROM application_documents WHERE id = ?`,
                     [docId]
                 );
                 if (rows.length > 0) {
                     file = rows[0];
                 }
             } catch (error) {
-                // If cloudinary_public_id column doesn't exist, try without it
-                if (error.message.includes('cloudinary_public_id')) {
+                // If s3_key column doesn't exist, try without it (for older databases)
+                if (error.message.includes('s3_key')) {
                     [rows] = await pool.execute(
                         `SELECT file_path FROM application_documents WHERE id = ?`,
                         [docId]
@@ -341,12 +340,12 @@ class FileStorageService {
             } else {
                 // Try to get from database
                 const [rows] = await pool.execute(
-                    `SELECT cloudinary_public_id FROM application_documents WHERE file_path = ?`,
+                    `SELECT s3_key FROM application_documents WHERE file_path = ?`,
                     [filePath]
                 );
                 
-                if (rows.length > 0 && rows[0].cloudinary_public_id) {
-                    s3Key = rows[0].cloudinary_public_id;
+                if (rows.length > 0 && rows[0].s3_key) {
+                    s3Key = rows[0].s3_key;
                 }
             }
             

@@ -47,9 +47,9 @@ const authenticateFileAccess = async (req, res, next) => {
 
 // Helper function to extract S3 key from file
 function extractS3Key(file) {
-    // First try to get from cloudinary_public_id column (we're reusing it for S3 key)
-    if (file.cloudinary_public_id) {
-        return file.cloudinary_public_id;
+    // First try to get from s3_key column
+    if (file.s3_key) {
+        return file.s3_key;
     }
     
     // If file_path is an S3 URL, extract the key
