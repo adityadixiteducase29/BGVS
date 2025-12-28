@@ -102,6 +102,69 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
   return children;
 };
 
+// Login Route Wrapper - checks both Redux and localStorage
+const LoginRoute = () => {
+  const dispatch = useAppDispatch();
+  const { user, isAuthenticated } = useAppSelector(state => state.auth);
+  const [checkingAuth, setCheckingAuth] = React.useState(true);
+
+  // Check localStorage on mount before Redux state is initialized
+  useEffect(() => {
+    const checkAuth = () => {
+      const storedAuth = AuthStorage.getAuth();
+
+      // If we have stored auth but Redux doesn't, restore it
+      if (storedAuth && !isAuthenticated) {
+        console.log('🔄 Restoring auth state from localStorage in LoginRoute');
+        dispatch(setCredentials({
+          token: storedAuth.token,
+          ...storedAuth.user
+        }));
+      }
+
+      setCheckingAuth(false);
+    };
+
+    checkAuth();
+  }, [isAuthenticated]);
+
+  // Show loading while checking
+  if (checkingAuth) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Check both Redux state and localStorage
+  const isAuth = isAuthenticated || AuthStorage.isAuthenticated();
+  const currentUser = user || AuthStorage.getUser();
+
+  // Redirect if authenticated
+  if (isAuth && currentUser) {
+    const redirectPath = (() => {
+      switch (currentUser.user_type) {
+        case 'admin':
+          return '/dashboard';
+        case 'verifier':
+          return '/verifier-dashboard';
+        case 'company':
+          return '/company-dashboard';
+        default:
+          return localStorage.getItem('lastRoute') || '/dashboard';
+      }
+    })();
+    return <Navigate to={redirectPath} replace />;
+  }
+
+  return <Login />;
+};
+
 // Main App Routes Component
 const AppRoutes = () => {
   const { user, isAuthenticated } = useAppSelector(state => state.auth);
@@ -109,17 +172,11 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/login" element={
-        isAuthenticated ? (
-          <Navigate to={localStorage.getItem('lastRoute') || '/dashboard'} replace />
-        ) : (
-          <Login />
-        )
-      } />
-      
+      <Route path="/login" element={<LoginRoute />} />
+
       {/* Public UserForm route - accessible without authentication */}
-              <Route path="/user-form/:companyId" element={<UserForm />} />
-      
+      <Route path="/user-form/:companyId" element={<UserForm />} />
+
       {/* Root redirect */}
       <Route path="/" element={
         isAuthenticated ? (
@@ -137,7 +194,7 @@ const AppRoutes = () => {
           </DashboardLayout>
         </ProtectedRoute>
       } />
-      
+
       <Route path="/client" element={
         <ProtectedRoute requiredRole="admin">
           <DashboardLayout>
@@ -145,7 +202,7 @@ const AppRoutes = () => {
           </DashboardLayout>
         </ProtectedRoute>
       } />
-      
+
       <Route path="/employees" element={
         <ProtectedRoute requiredRole="admin">
           <DashboardLayout>
@@ -153,7 +210,7 @@ const AppRoutes = () => {
           </DashboardLayout>
         </ProtectedRoute>
       } />
-      
+
       <Route path="/application" element={
         <ProtectedRoute requiredRole="admin">
           <DashboardLayout>
@@ -161,7 +218,7 @@ const AppRoutes = () => {
           </DashboardLayout>
         </ProtectedRoute>
       } />
-      
+
       <Route path="/help" element={
         <ProtectedRoute requiredRole="admin">
           <DashboardLayout>
@@ -178,7 +235,7 @@ const AppRoutes = () => {
           </DashboardLayout>
         </ProtectedRoute>
       } />
-      
+
       <Route path="/verifier-applications" element={
         <ProtectedRoute requiredRole="verifier">
           <DashboardLayout>
@@ -186,7 +243,7 @@ const AppRoutes = () => {
           </DashboardLayout>
         </ProtectedRoute>
       } />
-      
+
       <Route path="/pending" element={
         <ProtectedRoute requiredRole="verifier">
           <DashboardLayout>
@@ -194,7 +251,7 @@ const AppRoutes = () => {
           </DashboardLayout>
         </ProtectedRoute>
       } />
-      
+
       <Route path="/approved" element={
         <ProtectedRoute requiredRole="verifier">
           <DashboardLayout>
@@ -202,7 +259,7 @@ const AppRoutes = () => {
           </DashboardLayout>
         </ProtectedRoute>
       } />
-      
+
       <Route path="/verifier-help" element={
         <ProtectedRoute requiredRole="verifier">
           <DashboardLayout>

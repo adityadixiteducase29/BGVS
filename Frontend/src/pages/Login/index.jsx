@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Form, FormGroup, Label, Input, Button, Alert } from 'reactstrap';
 import './index.css';
@@ -21,22 +21,20 @@ const Login = () => {
   const dispatch = useAppDispatch();
   const { isAuthenticated, user, error } = useAppSelector(state => state.auth);
 
-  // Redirect if already authenticated
+  // Check localStorage on mount and restore auth if needed
   useEffect(() => {
-    if (isAuthenticated && user) {
-      redirectBasedOnRole(user.user_type);
+    const storedAuth = AuthStorage.getAuth();
+    if (storedAuth && !isAuthenticated) {
+      console.log('🔄 Restoring auth state from localStorage in Login component');
+      dispatch(setCredentials({
+        token: storedAuth.token,
+        ...storedAuth.user
+      }));
     }
-  }, [isAuthenticated, user]);
-
-  // Clear error when component unmounts or user changes
-  useEffect(() => {
-    return () => {
-      dispatch(clearError());
-    };
-  }, [dispatch]);
+  }, [isAuthenticated]);
 
   // Redirect user based on their role
-  const redirectBasedOnRole = (userType) => {
+  const redirectBasedOnRole = useCallback((userType) => {
     switch (userType) {
       case 'admin':
         navigate('/dashboard');
@@ -50,7 +48,24 @@ const Login = () => {
       default:
         navigate('/dashboard');
     }
-  };
+  }, [navigate]);
+
+  // Redirect if already authenticated (check both Redux and localStorage)
+  useEffect(() => {
+    const isAuth = isAuthenticated || AuthStorage.isAuthenticated();
+    const currentUser = user || AuthStorage.getUser();
+    
+    if (isAuth && currentUser) {
+      redirectBasedOnRole(currentUser.user_type);
+    }
+  }, [isAuthenticated, user, redirectBasedOnRole]);
+
+  // Clear error when component unmounts or user changes
+  useEffect(() => {
+    return () => {
+      dispatch(clearError());
+    };
+  }, [dispatch]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
