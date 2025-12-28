@@ -24,7 +24,7 @@ import Pending from './pages/Pending'
 import Approved from './pages/Approved'
 import VerifierHelp from './pages/VerifierHelp'
 import ClientDashboard from './pages/ClientDashboard'
-
+import ClientApplication from './pages/ClientDashboard/ClientApplication/Application'
 // Protected Route Component
 const ProtectedRoute = ({ children, requiredRole = null }) => {
   const dispatch = useAppDispatch();
@@ -223,6 +223,14 @@ const AppRoutes = () => {
         <ProtectedRoute requiredRole="company">
           <DashboardLayout>
             <ClientDashboard />
+          </DashboardLayout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/company-applications" element={
+        <ProtectedRoute requiredRole="company">
+          <DashboardLayout>
+            <ClientApplication />
           </DashboardLayout>
         </ProtectedRoute>
       } />

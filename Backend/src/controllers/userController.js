@@ -468,6 +468,7 @@ class UserController {
                     a.applicant_email,
                     a.applicant_phone,
                     a.application_status,
+                    a.rejection_reason,
                     a.created_at,
                     a.assigned_verifier_id,
                     a.assigned_at,
@@ -482,7 +483,7 @@ class UserController {
                 WHERE va.verifier_id = ? 
                 AND va.is_active = TRUE 
                 AND c.is_active = TRUE
-                AND a.application_status IN ('pending', 'assigned', 'under_review')
+                AND a.application_status IN ('pending', 'assigned', 'under_review', 'rejected')
                 ORDER BY a.created_at DESC
             `, [req.user.id]);
 
@@ -504,6 +505,7 @@ class UserController {
                     }),
                     priority: UserController.getPriority(app.created_at), // Helper function to determine priority
                     status: app.application_status,
+                    rejection_reason: app.rejection_reason || null,
                     companyName: app.company_name,
                     applicantEmail: app.applicant_email,
                     applicantPhone: app.applicant_phone,
@@ -629,7 +631,7 @@ class UserController {
                 });
             }
 
-            // Get applications for companies assigned to this verifier with approved status
+            // Get applications for companies assigned to this verifier with approved status only
             const [applications] = await pool.execute(`
                 SELECT 
                     a.id,
@@ -653,7 +655,7 @@ class UserController {
                 WHERE va.verifier_id = ? 
                 AND va.is_active = TRUE 
                 AND c.is_active = TRUE
-                AND a.application_status IN ('approved', 'rejected')
+                AND a.application_status = 'approved'
                 ORDER BY a.reviewed_at DESC, a.created_at DESC
             `, [req.user.id]);
 
@@ -789,14 +791,51 @@ class UserController {
         }
     }
 
-    // Get company applications (company only) - placeholder for future
+    // Get company applications (company only) - includes sub-companies
     static async getCompanyApplications(req, res) {
         try {
-            res.json({
+            const companyId = req.user.company_id || req.user.id; // company_id is set in authenticate middleware for company users
+            const { status, page, limit, date_start, date_end } = req.query;
+
+            if (!companyId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Company ID not found. Please ensure you are logged in as a company user.'
+                });
+            }
+
+            // Validate company exists
+            const Company = require('../models/Company');
+            const company = await Company.findById(companyId);
+            if (!company) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Company not found'
+                });
+            }
+
+            // Build filters object
+            const filters = {
+                company_id: companyId // This will automatically include sub-companies via findByCompany
+            };
+
+            if (status) filters.status = status;
+            if (date_start) filters.date_start = date_start;
+            if (date_end) filters.date_end = date_end;
+            if (page) filters.page = page;
+            filters.limit = limit || 10; // Default to 10 per page
+
+            // Use Application.findAll with company filter
+            // This will use the company_id filter which should include sub-companies
+            const Application = require('../models/Application');
+            const result = await Application.findAll(filters);
+
+            res.status(200).json({
                 success: true,
-                message: 'Company applications endpoint - to be implemented in future phase',
-                data: []
+                data: result.data,
+                pagination: result.pagination
             });
+
         } catch (error) {
             console.error('Get company applications error:', error);
             res.status(500).json({

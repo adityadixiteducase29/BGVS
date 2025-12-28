@@ -155,7 +155,7 @@ class ApplicationController {
     // Get all applications (Admin only) with pagination
     static async getAllApplications(req, res) {
         try {
-            const { status, client_id, company_id, verifier_id, search, page, limit } = req.query;
+            const { status, client_id, company_id, verifier_id, search, page, limit, date, date_start, date_end } = req.query;
             
             const filters = {};
             if (status) filters.status = status;
@@ -167,6 +167,14 @@ class ApplicationController {
             }
             if (verifier_id) filters.verifier_id = verifier_id;
             if (search) filters.search = search;
+            // Timezone-aware date filtering (preferred)
+            if (date_start && date_end) {
+                filters.date_start = date_start;
+                filters.date_end = date_end;
+            } else if (date) {
+                // Legacy date filter support
+                filters.date = date;
+            }
             if (page) filters.page = page;
             filters.limit = limit || 10; // Default to 10 per page
 

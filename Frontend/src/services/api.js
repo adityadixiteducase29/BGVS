@@ -311,10 +311,18 @@ class ApiService {
         }
     }
 
-    // Company Methods (Future)
-    async getCompanyApplications() {
+    // Company Methods
+    async getCompanyApplications(filters = {}) {
         try {
-            return await this.request('/users/company/applications');
+            const queryParams = new URLSearchParams();
+            Object.keys(filters).forEach(key => {
+                if (filters[key] !== null && filters[key] !== undefined && filters[key] !== '') {
+                    queryParams.append(key, filters[key]);
+                }
+            });
+            
+            const endpoint = `/users/company/applications${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+            return await this.request(endpoint);
         } catch (error) {
             return {
                 success: false,

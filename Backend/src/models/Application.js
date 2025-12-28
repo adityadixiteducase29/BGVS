@@ -468,9 +468,32 @@ class Application {
             }
 
             if (filters.company_id) {
-                query += ' AND a.company_id = ?';
-                countQuery += ' AND a.company_id = ?';
-                params.push(filters.company_id);
+                // Check if parent_company_id column exists to support sub-companies
+                const [columnCheck] = await pool.execute(`
+                    SELECT COUNT(*) as count 
+                    FROM information_schema.COLUMNS 
+                    WHERE TABLE_SCHEMA = DATABASE() 
+                    AND TABLE_NAME = 'companies' 
+                    AND COLUMN_NAME = 'parent_company_id'
+                `);
+                const hasParentColumn = columnCheck[0].count > 0;
+                
+                // Get sub-companies if parent column exists
+                let companyIds = [filters.company_id];
+                if (hasParentColumn) {
+                    const [subCompanies] = await pool.execute(
+                        'SELECT id FROM companies WHERE parent_company_id = ? AND is_active = TRUE',
+                        [filters.company_id]
+                    );
+                    const subCompanyIds = subCompanies.map(sc => sc.id);
+                    companyIds = [filters.company_id, ...subCompanyIds];
+                }
+                
+                // Use IN clause to include parent and sub-companies
+                const placeholders = companyIds.map(() => '?').join(',');
+                query += ` AND a.company_id IN (${placeholders})`;
+                countQuery += ` AND a.company_id IN (${placeholders})`;
+                params.push(...companyIds);
             }
 
             if (filters.verifier_id) {
@@ -496,7 +519,42 @@ class Application {
                 params.push(searchTerm, searchTerm, searchTerm, searchTerm);
             }
 
+            // Handle date range filtering with timezone-aware UTC timestamps
+            // Support both date_start and date_end (can be used independently)
+            if (filters.date_start || filters.date_end) {
+                if (filters.date_start && filters.date_end) {
+                    // Both start and end date provided - range filter
+                    query += ' AND a.created_at >= ? AND a.created_at <= ?';
+                    countQuery += ' AND a.created_at >= ? AND a.created_at <= ?';
+                    params.push(filters.date_start, filters.date_end);
+                } else if (filters.date_start) {
+                    // Only start date - filter from start date onwards
+                    query += ' AND a.created_at >= ?';
+                    countQuery += ' AND a.created_at >= ?';
+                    params.push(filters.date_start);
+                } else if (filters.date_end) {
+                    // Only end date - filter up to end date
+                    query += ' AND a.created_at <= ?';
+                    countQuery += ' AND a.created_at <= ?';
+                    params.push(filters.date_end);
+                }
+            } else if (filters.date) {
+                // Fallback: Legacy date filter (YYYY-MM-DD format)
+                // Convert to UTC range for the selected date
+                const dateStart = `${filters.date} 00:00:00`;
+                const dateEnd = `${filters.date} 23:59:59.999`;
+                query += ' AND a.created_at >= ? AND a.created_at <= ?';
+                countQuery += ' AND a.created_at >= ? AND a.created_at <= ?';
+                params.push(dateStart, dateEnd);
+            }
+
             query += ' ORDER BY a.created_at DESC';
+
+            // Debug logging
+            if (filters.date) {
+                console.log('📅 Date filter query:', query);
+                console.log('📅 Date filter params:', params);
+            }
 
             // Get total count
             const countParams = [...params];

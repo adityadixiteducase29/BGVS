@@ -652,7 +652,7 @@ class CompanyController {
             
             console.log('Getting employees for company:', companyId);
 
-            // Get employees assigned to this company with pending cases count
+            // Get employees assigned to this company with pending and approved cases count
             const [employees] = await pool.execute(`
                 SELECT 
                     u.id,
@@ -660,11 +660,11 @@ class CompanyController {
                     u.last_name,
                     u.email,
                     u.created_at,
-                    COUNT(DISTINCT a.id) as pending_cases
+                    COUNT(DISTINCT CASE WHEN a.application_status IN ('pending', 'assigned', 'under_review') THEN a.id END) as pending_cases,
+                    COUNT(DISTINCT CASE WHEN a.application_status = 'approved' THEN a.id END) as approved_cases
                 FROM users u
                 INNER JOIN verifier_assignments va ON u.id = va.verifier_id
-                LEFT JOIN applications a ON va.company_id = a.company_id 
-                    AND a.application_status IN ('pending', 'assigned', 'under_review')
+                LEFT JOIN applications a ON va.company_id = a.company_id
                 WHERE va.company_id = ? 
                 AND va.is_active = TRUE 
                 AND u.user_type = 'verifier'
@@ -680,6 +680,7 @@ class CompanyController {
                 email: employee.email,
                 phone: '-', // Phone not available in users table
                 pendingCases: parseInt(employee.pending_cases) || 0,
+                approvedCases: parseInt(employee.approved_cases) || 0,
                 assignedDate: employee.created_at
             }));
 

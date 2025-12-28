@@ -81,12 +81,12 @@ const AppSidebar = ({ userType, user, onLogout }) => {
       path: '/company-dashboard',
       label: 'Dashboard',
       icon: <DashboardIcon />
+    },
+    {
+      path: '/company-applications',
+      label: 'Applications',
+      icon: <AssignmentIcon />
     }
-    // {
-    //   path: '/company-applications',
-    //   label: 'Applications',
-    //   icon: <AssignmentIcon />
-    // },
     // {
     //   path: '/company-stats',
     //   label: 'Statistics',

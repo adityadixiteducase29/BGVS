@@ -24,6 +24,7 @@ import Education from './ReviewEducation'
 import PersonalInformation from './ReviewPersonalInfo'
 import Reference from './ReviewReference'
 import EditApplication from '../Applications/EditApplication'
+import FinalizeReviewModal from './FinalizeReviewModal'
 import { useCompanyServices } from '../../utils/companyServices'
 import { Button } from 'reactstrap'
 import apiService from '../../services/api'
@@ -175,6 +176,7 @@ const ReviewApplication = () => {
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [basicDetails, setBasicDetails] = useState(null);
   const [editModal, setEditModal] = useState(false);
+  const [finalizeModal, setFinalizeModal] = useState(false);
   console.log(formData, "formData")
   console.log(reviewData, "reviewData")
   
@@ -309,20 +311,17 @@ const ReviewApplication = () => {
     }
   };
 
-  // Finalize review functionality
-  const handleFinalizeReview = async () => {
+  // Open finalize review modal
+  const handleFinalizeReview = () => {
+    setFinalizeModal(true);
+  };
+
+  // Actually finalize the review (called from modal)
+  const handleConfirmFinalize = async (overallStatus, rejectionReason) => {
     try {
       setIsFinalizing(true);
+      setFinalizeModal(false);
       
-      // Check if all fields and files are reviewed
-      // const pendingFields = Object.values(fieldReviews).filter(review => review.review_status === 'pending');
-      // const pendingFiles = Object.values(fileReviews).filter(review => review.review_status === 'pending');
-      
-      // if (pendingFields.length > 0 || pendingFiles.length > 0) {
-      //   toast.warning('Please review all fields and files before finalizing');
-      //   return;
-      // }
-
       // Prepare final submission
       const fieldReviewsToSubmit = Object.entries(fieldReviews).map(([fieldName, review]) => ({
         fieldName,
@@ -341,20 +340,23 @@ const ReviewApplication = () => {
       const reviewPayload = {
         fieldReviews: fieldReviewsToSubmit,
         fileReviews: fileReviewsToSubmit,
-        overallNotes: 'Review completed'
+        overallNotes: overallStatus === 'approved' ? 'Review completed - Approved' : 'Review completed - Rejected'
       };
 
       const reviewResult = await apiService.submitReview(applicationId, reviewPayload);
       
       if (reviewResult.success) {
-        // Then finalize the review
-        const finalizeResult = await apiService.finalizeReview(applicationId, {
-          overallStatus: 'approved', // You can make this configurable
-          finalNotes: 'Application review completed'
-        });
+        // Then finalize the review with status and rejection reason
+        const finalizePayload = {
+          overallStatus: overallStatus,
+          finalNotes: overallStatus === 'approved' ? 'Application review completed' : 'Application rejected',
+          rejectionReason: rejectionReason || null
+        };
+
+        const finalizeResult = await apiService.finalizeReview(applicationId, finalizePayload);
         
         if (finalizeResult.success) {
-          toast.success('Application review finalized successfully');
+          toast.success(`Application ${overallStatus === 'approved' ? 'approved' : 'rejected'} successfully`);
           // Navigate to verifier applications page on success
           setTimeout(() => {
             navigate('/verifier-applications');
@@ -766,6 +768,14 @@ const ReviewApplication = () => {
           }}
         />
       )}
+
+      {/* Finalize Review Modal */}
+      <FinalizeReviewModal
+        isOpen={finalizeModal}
+        toggle={() => setFinalizeModal(false)}
+        onFinalize={handleConfirmFinalize}
+        isFinalizing={isFinalizing}
+      />
     </Box>
   )
 }

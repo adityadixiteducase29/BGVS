@@ -360,7 +360,7 @@ class ReviewController {
         
         try {
             const { id } = req.params;
-            const { overallStatus, finalNotes } = req.body;
+            const { overallStatus, finalNotes, rejectionReason } = req.body;
             const reviewerId = req.user.id;
 
             console.log('🔍 Finalizing review for application:', id, 'Status:', overallStatus);
@@ -369,6 +369,14 @@ class ReviewController {
                 return res.status(400).json({
                     success: false,
                     message: 'Overall status must be either "approved" or "rejected"'
+                });
+            }
+
+            // Validate rejection reason is provided when status is rejected
+            if (overallStatus === 'rejected' && !rejectionReason) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Rejection reason is required when rejecting an application'
                 });
             }
 
@@ -405,11 +413,19 @@ class ReviewController {
                 
                 await connection.execute(reviewSummaryQuery, [id, overallStatus, finalNotes || null, reviewerId]);
 
-                // Update application status
-                await connection.execute(
-                    'UPDATE applications SET application_status = ?, reviewed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                    [overallStatus, id]
-                );
+                // Update application status and rejection reason if rejected
+                if (overallStatus === 'rejected') {
+                    await connection.execute(
+                        'UPDATE applications SET application_status = ?, rejection_reason = ?, reviewed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                        [overallStatus, rejectionReason, id]
+                    );
+                } else {
+                    // Clear rejection reason if approving
+                    await connection.execute(
+                        'UPDATE applications SET application_status = ?, rejection_reason = NULL, reviewed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                        [overallStatus, id]
+                    );
+                }
 
                 // Commit transaction
                 await connection.commit();

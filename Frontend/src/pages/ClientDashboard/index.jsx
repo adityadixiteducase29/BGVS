@@ -120,17 +120,26 @@ const ClientDashboard = () => {
       minWidth: 120,
       headerAlign: 'left',
       renderCell: (data) => {
-        const count = data.row.pendingCases;
-        const getStatusColor = (count) => {
-          if (count === 0) return 'green';
-          if (count <= 5) return 'orange';
-          return 'red';
-        };
-        
-        const statusColor = getStatusColor(count);
+        const count = data.row.pendingCases;  
         
         return (
-          <div className={`datatable-priority datatable-priority-${statusColor}`}>
+          <div className="datatable-cell-content">
+            {count}
+          </div>
+        );
+      } 
+    },
+    { 
+      field: 'approvedCases', 
+      headerName: 'Approved Cases', 
+      flex: 1, 
+      minWidth: 120,
+      headerAlign: 'left',
+      renderCell: (data) => {
+        const count = data.row.approvedCases;  
+        
+        return (
+          <div className="datatable-cell-content">
             {count}
           </div>
         );

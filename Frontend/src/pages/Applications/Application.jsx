@@ -7,10 +7,13 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import GetAppIcon from '@mui/icons-material/GetApp';
 import { Select, MenuItem, FormControl, InputLabel, Box } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import apiService from '@/services/api';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from 'reactstrap';
+import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Popover, PopoverBody } from 'reactstrap';
 import Import from './Import/Import';
 import EditApplication from './EditApplication';
 
@@ -30,9 +33,12 @@ const Application = () => {
   // Filter states
   const [selectedCompany, setSelectedCompany] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [selectedStartDate, setSelectedStartDate] = useState(null);
+  const [selectedEndDate, setSelectedEndDate] = useState(null);
   const [companies, setCompanies] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loadingFilters, setLoadingFilters] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState({});
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -42,6 +48,14 @@ const Application = () => {
   
   const toggleImportModal = () => setImportModal(!importModal);
   const toggleEditModal = () => setEditModal(!editModal);
+
+  // Popover handlers
+  const togglePopover = (applicationId) => {
+    setPopoverOpen(prev => ({
+      ...prev,
+      [applicationId]: !prev[applicationId]
+    }));
+  };
   // Fetch companies and employees for filters
   useEffect(() => {
     const fetchFilters = async () => {
@@ -94,6 +108,21 @@ const Application = () => {
         if (selectedEmployee) {
           filters.verifier_id = selectedEmployee;
         }
+        // Date range filter
+        if (selectedStartDate || selectedEndDate) {
+          if (selectedStartDate) {
+            // Convert start date to UTC start of day
+            const startOfDay = new Date(selectedStartDate);
+            startOfDay.setHours(0, 0, 0, 0);
+            filters.date_start = startOfDay.toISOString();
+          }
+          if (selectedEndDate) {
+            // Convert end date to UTC end of day
+            const endOfDay = new Date(selectedEndDate);
+            endOfDay.setHours(23, 59, 59, 999);
+            filters.date_end = endOfDay.toISOString();
+          }
+        }
 
         const response = await apiService.getAllApplications(filters);
 
@@ -117,7 +146,7 @@ const Application = () => {
     if (token) {
       fetchApplications();
     }
-  }, [token, selectedCompany, selectedEmployee, currentPage]);
+  }, [token, selectedCompany, selectedEmployee, selectedStartDate, selectedEndDate, currentPage]);
 
   const handleEditClick = (row) => {
     setApplicationToEdit(row);
@@ -141,6 +170,21 @@ const Application = () => {
         }
         if (selectedEmployee) {
           filters.verifier_id = selectedEmployee;
+        }
+        // Date range filter
+        if (selectedStartDate || selectedEndDate) {
+          if (selectedStartDate) {
+            // Convert start date to UTC start of day
+            const startOfDay = new Date(selectedStartDate);
+            startOfDay.setHours(0, 0, 0, 0);
+            filters.date_start = startOfDay.toISOString();
+          }
+          if (selectedEndDate) {
+            // Convert end date to UTC end of day
+            const endOfDay = new Date(selectedEndDate);
+            endOfDay.setHours(23, 59, 59, 999);
+            filters.date_end = endOfDay.toISOString();
+          }
         }
         
         const response = await apiService.getAllApplications(filters);
@@ -296,7 +340,7 @@ const Application = () => {
       field: 'application_status',
       headerName: 'Status',
       flex: 1,
-      minWidth: 100,
+      minWidth: 130,
       headerAlign: 'left',
       renderCell: (params) => (
         <div className="datatable-cell-content">
@@ -305,6 +349,53 @@ const Application = () => {
           </span>
         </div>
       )
+    },
+    {
+      field: 'rejection_reason',
+      headerName: 'Remark',
+      flex: 1,
+      minWidth: 200,
+      headerAlign: 'left',
+      renderCell: (params) => {
+        const applicationId = params.row.id;
+        const rejectionReason = params.row.rejection_reason;
+        const isPopoverOpen = popoverOpen[applicationId] || false;
+        const targetId = `rejection-reason-${applicationId}`;
+
+        return (
+          <div className="datatable-cell-content">
+            {rejectionReason ? (
+              <>
+                <span
+                  id={targetId}
+                  style={{
+                    color: '#d32f2f',
+                    fontStyle: 'italic',
+                    cursor: 'pointer',
+                    textDecoration: 'underline'
+                  }}
+                  onMouseEnter={() => setPopoverOpen(prev => ({ ...prev, [applicationId]: true }))}
+                  onMouseLeave={() => setPopoverOpen(prev => ({ ...prev, [applicationId]: false }))}
+                >
+                  {rejectionReason.length > 50 ? `${rejectionReason.substring(0, 50)}...` : rejectionReason}
+                </span>
+                <Popover
+                  placement="bottom"
+                  isOpen={isPopoverOpen}
+                  target={targetId}
+                  toggle={() => togglePopover(applicationId)}
+                >
+                  <PopoverBody style={{ maxWidth: '300px', whiteSpace: 'pre-wrap' }}>
+                    {rejectionReason}
+                  </PopoverBody>
+                </Popover>
+              </>
+            ) : (
+              <span style={{ color: '#9EA5AD' }}>N/A</span>
+            )}
+          </div>
+        );
+      }
     },
     {
       field: 'actions',
@@ -354,7 +445,19 @@ const Application = () => {
   const handleClearFilters = () => {
     setSelectedCompany('');
     setSelectedEmployee('');
+    setSelectedStartDate(null);
+    setSelectedEndDate(null);
     setCurrentPage(1); // Reset to first page when clearing filters
+  };
+
+  const handleStartDateChange = (date) => {
+    setSelectedStartDate(date);
+    setCurrentPage(1); // Reset to first page when date changes
+  };
+
+  const handleEndDateChange = (date) => {
+    setSelectedEndDate(date);
+    setCurrentPage(1); // Reset to first page when date changes
   };
 
   const handlePageChange = (event, value) => {
@@ -433,7 +536,36 @@ const Application = () => {
           </Select>
         </FormControl>
 
-        {(selectedCompany || selectedEmployee) && (
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <DatePicker
+            label="Start Date"
+            value={selectedStartDate}
+            onChange={handleStartDateChange}
+            maxDate={selectedEndDate || undefined}
+            slotProps={{
+              textField: {
+                size: 'small',
+                sx: { minWidth: 200 }
+              }
+            }}
+            format="dd/MM/yyyy"
+          />
+          <DatePicker
+            label="End Date"
+            value={selectedEndDate}
+            onChange={handleEndDateChange}
+            minDate={selectedStartDate || undefined}
+            slotProps={{
+              textField: {
+                size: 'small',
+                sx: { minWidth: 200 }
+              }
+            }}
+            format="dd/MM/yyyy"
+          />
+        </LocalizationProvider>
+
+        {(selectedCompany || selectedEmployee || selectedStartDate || selectedEndDate) && (
           <Button
             color="secondary"
             size="small"
@@ -545,12 +677,30 @@ const Application = () => {
               apiService.setToken(token);
               
               // Build filters object
-              const filters = {};
+              const filters = {
+                page: currentPage,
+                limit: pageSize
+              };
               if (selectedCompany) {
                 filters.company_id = selectedCompany;
               }
               if (selectedEmployee) {
                 filters.verifier_id = selectedEmployee;
+              }
+              // Date range filter
+              if (selectedStartDate || selectedEndDate) {
+                if (selectedStartDate) {
+                  // Convert start date to UTC start of day
+                  const startOfDay = new Date(selectedStartDate);
+                  startOfDay.setHours(0, 0, 0, 0);
+                  filters.date_start = startOfDay.toISOString();
+                }
+                if (selectedEndDate) {
+                  // Convert end date to UTC end of day
+                  const endOfDay = new Date(selectedEndDate);
+                  endOfDay.setHours(23, 59, 59, 999);
+                  filters.date_end = endOfDay.toISOString();
+                }
               }
               
               const response = await apiService.getAllApplications(filters);
