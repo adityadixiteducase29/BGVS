@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button as ButtonStrap, Modal, ModalHeader, ModalBody, ModalFooter, Popover, PopoverBody } from 'reactstrap';
+import IconButton from '@mui/material/IconButton';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import DescriptionIcon from '@mui/icons-material/Description';
+import ReportUploadModal from '@/components/ReportUploadModal';
 import './index.css';
 import Datatable from "@/components/Datatable";
 import apiService from "../../services/api";
@@ -15,6 +19,9 @@ const VerifierApplications = () => {
   const [modal, setModal] = useState(false);
   const [selectedApplicationId, setSelectedApplicationId] = useState(null);
   const [popoverOpen, setPopoverOpen] = useState({});
+  const [reportUploadModal, setReportUploadModal] = useState(false);
+  const [selectedApplicationForReport, setSelectedApplicationForReport] = useState(null);
+  const [reports, setReports] = useState({}); // Store reports by application ID
   const navigate = useNavigate();
 
   const toggle = () => setModal(!modal);
@@ -42,7 +49,27 @@ const VerifierApplications = () => {
       const applicationsResponse = await apiService.getVerifierApplications();
 
       if (applicationsResponse.success) {
-        setTabledata(applicationsResponse.data);
+        const apps = applicationsResponse.data || [];
+        setTabledata(apps);
+        
+        // Fetch reports for all applications
+        const applicationIds = apps.map(app => app.id);
+        if (applicationIds.length > 0) {
+          const reportsMap = {};
+          await Promise.all(
+            applicationIds.map(async (appId) => {
+              try {
+                const response = await apiService.getApplicationReports(appId);
+                if (response.success && response.data && response.data.length > 0) {
+                  reportsMap[appId] = response.data;
+                }
+              } catch (err) {
+                console.error(`Error fetching reports for application ${appId}:`, err);
+              }
+            })
+          );
+          setReports(reportsMap);
+        }
       } else {
         console.error('Failed to fetch applications:', applicationsResponse.message);
         toast.error('Failed to fetch applications');
@@ -104,6 +131,57 @@ const VerifierApplications = () => {
   const handleStartReview = () => {
     if (selectedApplicationId) {
       navigate(`/review-application/${selectedApplicationId}`);
+    }
+  };
+
+  const handleDownloadReport = async (applicationId) => {
+    try {
+      const applicationReports = reports[applicationId] || [];
+      if (applicationReports.length === 0) {
+        toast.error('No reports available for this application');
+        return;
+      }
+
+      // Get the most recent report
+      const latestReport = applicationReports[0];
+      
+      // Get pre-signed URL from backend
+      const token = localStorage.getItem('auth_token');
+      apiService.setToken(token);
+      
+      const response = await apiService.getReportDownloadUrl(latestReport.id);
+      if (response.success && response.url) {
+        // Create a temporary link and trigger download
+        const link = document.createElement('a');
+        link.href = response.url;
+        link.download = response.fileName || 'report.pdf';
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success('Report download started');
+      } else {
+        toast.error(response.message || 'Failed to download report');
+      }
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      toast.error('Failed to download report');
+    }
+  };
+
+  const handleReportUploadComplete = () => {
+    // Refresh reports for the selected application
+    if (selectedApplicationForReport) {
+      const token = localStorage.getItem('auth_token');
+      apiService.setToken(token);
+      apiService.getApplicationReports(selectedApplicationForReport).then(response => {
+        if (response.success && response.data) {
+          setReports(prev => ({
+            ...prev,
+            [selectedApplicationForReport]: response.data
+          }));
+        }
+      });
     }
   };
 
@@ -263,8 +341,58 @@ const VerifierApplications = () => {
         // 1. Application is assigned to a different verifier
         const shouldDisable = isAssigned && !isAssignedToCurrentUser;
 
+        const applicationId = application.id;
+        const applicationReports = reports[applicationId] || [];
+        const hasReports = applicationReports.length > 0;
+
         return (
-          <div className="datatable-actions">
+          <div className="datatable-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Report Upload Button */}
+            <IconButton
+              size="small"
+              onClick={() => {
+                setSelectedApplicationForReport(applicationId);
+                setReportUploadModal(true);
+              }}
+              title="Upload Report"
+              style={{ color: '#2e7d32' }}
+            >
+              <UploadFileIcon fontSize="small" />
+            </IconButton>
+
+            {/* Report Download Button */}
+            {hasReports && (
+              <IconButton
+                size="small"
+                onClick={() => handleDownloadReport(applicationId)}
+                title="Download Report"
+                style={{ color: '#1976d2' }}
+              >
+                <DescriptionIcon fontSize="small" />
+              </IconButton>
+            )}
+          </div>
+        );
+      }
+    },
+    {
+      field: 'review',
+      headerName: 'Review',
+      flex: 1,
+      minWidth: 120,
+      headerAlign: 'left',
+      sortable: false,
+      renderCell: (data) => {
+        const application = data.row;
+        const isAssigned = application.is_assigned === 'yes';
+        const isAssignedToCurrentUser = application.assigned_verifier_id === currentUser?.id;
+
+        // Button should be disabled if:
+        // 1. Application is assigned to a different verifier
+        const shouldDisable = isAssigned && !isAssignedToCurrentUser;
+
+        return (
+          <div className="datatable-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
             <ButtonStrap
               color="primary"
               className='custom-primary-button'
@@ -339,6 +467,17 @@ const VerifierApplications = () => {
           </ButtonStrap>{' '}
         </ModalFooter>
       </Modal>
+
+      {/* Report Upload Modal */}
+      <ReportUploadModal
+        isOpen={reportUploadModal}
+        toggle={() => {
+          setReportUploadModal(false);
+          setSelectedApplicationForReport(null);
+        }}
+        applicationId={selectedApplicationForReport}
+        onUploadComplete={handleReportUploadComplete}
+      />
     </div>
   );
 };

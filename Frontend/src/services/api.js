@@ -507,6 +507,70 @@ class ApiService {
         }
     }
 
+    // ============================================================================
+    // REPORT METHODS
+    // ============================================================================
+
+    // Upload report for an application
+    async uploadReport(applicationId, file) {
+        try {
+            const formData = new FormData();
+            formData.append('report', file);
+
+            return await this.request(`/applications/${applicationId}/reports`, {
+                method: 'POST',
+                body: formData
+            });
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message || 'Failed to upload report',
+                error: error
+            };
+        }
+    }
+
+    // Get reports for an application
+    async getApplicationReports(applicationId) {
+        try {
+            return await this.request(`/applications/${applicationId}/reports`);
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message || 'Failed to fetch reports',
+                error: error
+            };
+        }
+    }
+
+    // Get report download URL (pre-signed)
+    async getReportDownloadUrl(reportId) {
+        try {
+            return await this.request(`/applications/reports/${reportId}/download`);
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message || 'Failed to get report download URL',
+                error: error
+            };
+        }
+    }
+
+    // Delete report
+    async deleteReport(reportId) {
+        try {
+            return await this.request(`/applications/reports/${reportId}`, {
+                method: 'DELETE'
+            });
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message || 'Failed to delete report',
+                error: error
+            };
+        }
+    }
+
     async updateApplication(id, applicationData) {
         try {
             // Create FormData for file uploads

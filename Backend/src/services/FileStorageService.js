@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const { pool } = require('../config/database');
-const cloudinary = require('../config/cloudinary');
+const { s3Client, BUCKET_NAME } = require('../config/s3');
+const { PutObjectCommand, DeleteObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 
 class FileStorageService {
     constructor() {
@@ -26,82 +27,65 @@ class FileStorageService {
         return `${applicationId}_${baseName}_${timestamp}_${randomString}${extension}`;
     }
 
-    // Generate Cloudinary public_id (path in Cloudinary)
-    generatePublicId(originalName, applicationId) {
+    // Generate S3 key (path in S3)
+    generateS3Key(originalName, applicationId) {
         const fileName = this.generateFileName(originalName, applicationId);
         // Get environment identifier to prevent conflicts between dev/prod
         const env = process.env.NODE_ENV || 'development';
-        const envPrefix = env === 'production' ? 'prod' : 'dev';
-        // Remove extension for public_id (Cloudinary handles it)
-        const publicId = `${envPrefix}/applications/${applicationId}/${path.basename(fileName, path.extname(fileName))}`;
-        return publicId;
+        const envPrefix = env === 'production' ? 'production' : 'development';
+        // S3 key: development/applications/{applicationId}/{filename}
+        return `${envPrefix}/applications/${applicationId}/${fileName}`;
     }
 
-    // Save file to Cloudinary
+    // Generate S3 key for reports (separate folder)
+    generateReportS3Key(originalName, applicationId) {
+        const fileName = this.generateFileName(originalName, applicationId);
+        const env = process.env.NODE_ENV || 'development';
+        const envPrefix = env === 'production' ? 'production' : 'development';
+        // S3 key: development/applications/{applicationId}/reports/{filename}
+        return `${envPrefix}/applications/${applicationId}/reports/${fileName}`;
+    }
+
+    // Save file to S3
     async saveFile(file, applicationId) {
         try {
-            const publicId = this.generatePublicId(file.originalname, applicationId);
+            const s3Key = this.generateS3Key(file.originalname, applicationId);
             
-            // Determine resource type
-            const resourceType = file.mimetype?.startsWith('image/') ? 'image' : 
-                               file.mimetype?.startsWith('video/') ? 'video' : 'raw';
-            
-            // Get environment identifier (dev/prod) to prevent folder conflicts
-            const env = process.env.NODE_ENV || 'development';
-            const envPrefix = env === 'production' ? 'prod' : 'dev';
-            
-            // Upload to Cloudinary with environment prefix to prevent conflicts between dev/prod
-            const uploadResult = await new Promise((resolve, reject) => {
-                const uploadStream = cloudinary.uploader.upload_stream(
-                    {
-                        resource_type: resourceType,
-                        public_id: publicId,
-                        folder: `${envPrefix}/applications/${applicationId}`, // Organize by environment and application
-                        use_filename: false,
-                        unique_filename: true,
-                    },
-                    (error, result) => {
-                        if (error) {
-                            reject(error);
-                        } else {
-                            resolve(result);
-                        }
-                    }
-                );
-                
-                // Upload the buffer
-                uploadStream.end(file.buffer);
+            // Upload to S3
+            const uploadCommand = new PutObjectCommand({
+                Bucket: BUCKET_NAME,
+                Key: s3Key,
+                Body: file.buffer,
+                ContentType: file.mimetype,
+                Metadata: {
+                    'original-name': file.originalname,
+                    'application-id': applicationId.toString()
+                }
             });
 
-            // Determine mime type correctly for different resource types
-            let mimeType = file.mimetype;
-            if (uploadResult.format) {
-                if (resourceType === 'image') {
-                    mimeType = `image/${uploadResult.format}`;
-                } else if (resourceType === 'raw') {
-                    // For PDFs and other raw files, keep original mimetype
-                    mimeType = file.mimetype || `application/${uploadResult.format}`;
-                }
-            }
+            await s3Client.send(uploadCommand);
+
+            // Generate S3 URL (public URL - we'll use pre-signed URLs for access)
+            const s3Url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${s3Key}`;
             
             return {
-                fileName: path.basename(uploadResult.original_filename || file.originalname),
-                filePath: uploadResult.secure_url, // Cloudinary URL
-                cloudinaryPublicId: uploadResult.public_id,
+                fileName: path.basename(file.originalname),
+                filePath: s3Url, // S3 URL stored in database
+                s3Key: s3Key, // S3 key for deletion
                 originalName: file.originalname,
-                size: uploadResult.bytes || file.size,
-                mimeType: mimeType
+                size: file.size,
+                mimeType: file.mimetype
             };
         } catch (error) {
-            console.error('Error saving file to Cloudinary:', error);
-            throw new Error('Failed to save file to Cloudinary');
+            console.error('Error saving file to S3:', error);
+            throw new Error('Failed to save file to S3');
         }
     }
 
     // Save file information to database
     async saveFileToDatabase(fileInfo, applicationId, documentType) {
         try {
-            // Try with cloudinary_public_id first (for newer databases)
+            // Try with s3_key first (for newer databases), fallback to cloudinary_public_id for backward compatibility
             const [result] = await pool.execute(
                 `INSERT INTO application_documents 
                 (application_id, document_type, document_name, file_path, file_size, mime_type, cloudinary_public_id) 
@@ -110,10 +94,10 @@ class FileStorageService {
                     applicationId,
                     documentType,
                     fileInfo.originalName,
-                    fileInfo.filePath, // Cloudinary URL stored here
+                    fileInfo.filePath, // S3 URL stored here
                     fileInfo.size,
                     fileInfo.mimeType,
-                    fileInfo.cloudinaryPublicId || null
+                    fileInfo.s3Key || null // Store S3 key in cloudinary_public_id column for backward compatibility
                 ]
             );
             return result.insertId;
@@ -175,7 +159,7 @@ class FileStorageService {
         
         for (const file of files) {
             try {
-                // Save file to disk
+                // Save file to S3
                 const fileInfo = await this.saveFile(file, applicationId);
                 
                 // Determine document type
@@ -192,10 +176,10 @@ class FileStorageService {
                     documentType,
                     size: fileInfo.size,
                     mimeType: fileInfo.mimeType,
-                    url: fileInfo.filePath // Cloudinary URL
+                    url: fileInfo.filePath // S3 URL
                 });
                 
-                console.log(`File saved to Cloudinary: ${file.fieldname} -> ${fileInfo.filePath}`);
+                console.log(`File saved to S3: ${file.fieldname} -> ${fileInfo.filePath}`);
             } catch (error) {
                 console.error(`Error processing file ${file.fieldname}:`, error);
                 // Continue processing other files even if one fails
@@ -219,7 +203,34 @@ class FileStorageService {
         }
     }
 
-    // Delete file from Cloudinary and database
+    // Extract S3 key from file path or database
+    extractS3Key(file) {
+        // First try to get from cloudinary_public_id column (we're reusing it for S3 key)
+        if (file.cloudinary_public_id) {
+            return file.cloudinary_public_id;
+        }
+        
+        // If file_path is an S3 URL, extract the key
+        if (file.file_path && file.file_path.includes('.amazonaws.com/')) {
+            try {
+                const urlParts = file.file_path.split('.amazonaws.com/');
+                if (urlParts.length > 1) {
+                    return urlParts[1];
+                }
+            } catch (error) {
+                console.error('Error extracting S3 key from URL:', error);
+            }
+        }
+        
+        // If file_path is just the S3 key (without full URL)
+        if (file.file_path && (file.file_path.startsWith('development/') || file.file_path.startsWith('production/'))) {
+            return file.file_path;
+        }
+        
+        return null;
+    }
+
+    // Delete file from S3 and database
     async deleteFile(documentId) {
         try {
             // Validate documentId
@@ -230,10 +241,8 @@ class FileStorageService {
             const docId = parseInt(documentId);
             
             // Get file info from database
-            // Try with cloudinary_public_id first, fallback to just file_path if column doesn't exist
             let rows;
             let file;
-            let publicId = null;
             
             try {
                 [rows] = await pool.execute(
@@ -242,7 +251,6 @@ class FileStorageService {
                 );
                 if (rows.length > 0) {
                     file = rows[0];
-                    publicId = file.cloudinary_public_id || null;
                 }
             } catch (error) {
                 // If cloudinary_public_id column doesn't exist, try without it
@@ -253,7 +261,6 @@ class FileStorageService {
                     );
                     if (rows.length > 0) {
                         file = rows[0];
-                        publicId = null;
                     }
                 } else {
                     throw error;
@@ -265,40 +272,25 @@ class FileStorageService {
                 return false;
             }
             
-            // If publicId is not in database but file_path is a Cloudinary URL, extract it
-            if (!publicId && file.file_path && file.file_path.includes('cloudinary.com')) {
-                try {
-                    // Extract public_id from Cloudinary URL
-                    // Format: https://res.cloudinary.com/{cloud_name}/{resource_type}/upload/{version}/{public_id}.{format}
-                    const urlParts = file.file_path.split('/');
-                    const uploadIndex = urlParts.findIndex(part => part === 'upload');
-                    if (uploadIndex !== -1 && urlParts.length > uploadIndex + 2) {
-                        const pathAfterVersion = urlParts.slice(uploadIndex + 2).join('/');
-                        publicId = pathAfterVersion.replace(/\.[^/.]+$/, ''); // Remove file extension
-                        console.log(`Extracted public_id from URL: ${publicId}`);
-                    }
-                } catch (extractError) {
-                    console.error('Error extracting public_id from URL:', extractError);
-                }
-            }
+            // Extract S3 key
+            const s3Key = this.extractS3Key(file);
             
-            // Delete from Cloudinary if public_id exists
-            if (publicId) {
+            // Delete from S3 if key exists
+            if (s3Key) {
                 try {
-                    // Determine resource type
-                    const resourceType = file.file_path?.includes('/image/') ? 'image' : 
-                                       file.file_path?.includes('/video/') ? 'video' : 'raw';
-                    
-                    await cloudinary.uploader.destroy(publicId, {
-                        resource_type: resourceType
+                    const deleteCommand = new DeleteObjectCommand({
+                        Bucket: BUCKET_NAME,
+                        Key: s3Key
                     });
-                    console.log(`File deleted from Cloudinary: ${publicId}`);
-                } catch (cloudinaryError) {
-                    console.error('Error deleting from Cloudinary:', cloudinaryError);
-                    // Continue with database deletion even if Cloudinary deletion fails
+                    
+                    await s3Client.send(deleteCommand);
+                    console.log(`File deleted from S3: ${s3Key}`);
+                } catch (s3Error) {
+                    console.error('Error deleting from S3:', s3Error);
+                    // Continue with database deletion even if S3 deletion fails
                 }
-            } else if (file.file_path && !file.file_path.includes('cloudinary.com')) {
-                // Fallback: Delete from local disk if not in Cloudinary
+            } else if (file.file_path && !file.file_path.includes('.amazonaws.com') && !file.file_path.startsWith('development/') && !file.file_path.startsWith('production/')) {
+                // Fallback: Delete from local disk if not in S3 (for old files)
                 try {
                     if (fs.existsSync(file.file_path)) {
                         fs.unlinkSync(file.file_path);
@@ -334,51 +326,43 @@ class FileStorageService {
     // Delete file by path (for bulk deletion)
     async deleteFileByPath(filePath) {
         try {
-            // Check if it's a Cloudinary URL
-            if (filePath && filePath.includes('cloudinary.com')) {
-                // Try to get public_id from database
+            // Check if it's an S3 URL or key
+            let s3Key = null;
+            
+            if (filePath && filePath.includes('.amazonaws.com/')) {
+                // Extract key from S3 URL
+                const urlParts = filePath.split('.amazonaws.com/');
+                if (urlParts.length > 1) {
+                    s3Key = urlParts[1];
+                }
+            } else if (filePath && (filePath.startsWith('development/') || filePath.startsWith('production/'))) {
+                // It's already an S3 key
+                s3Key = filePath;
+            } else {
+                // Try to get from database
                 const [rows] = await pool.execute(
                     `SELECT cloudinary_public_id FROM application_documents WHERE file_path = ?`,
                     [filePath]
                 );
                 
                 if (rows.length > 0 && rows[0].cloudinary_public_id) {
-                    const publicId = rows[0].cloudinary_public_id;
-                    try {
-                        const resourceType = filePath.includes('/image/') ? 'image' : 
-                                           filePath.includes('/video/') ? 'video' : 'raw';
-                        
-                        await cloudinary.uploader.destroy(publicId, {
-                            resource_type: resourceType
-                        });
-                        console.log(`Successfully deleted file from Cloudinary: ${publicId}`);
-                        return true;
-                    } catch (cloudinaryError) {
-                        console.error('Error deleting from Cloudinary:', cloudinaryError);
-                        return false;
-                    }
-                } else {
-                    // Try to extract public_id from URL
-                    const urlParts = filePath.split('/');
-                    const uploadIndex = urlParts.findIndex(part => part === 'upload');
-                    if (uploadIndex !== -1 && urlParts.length > uploadIndex + 2) {
-                        const pathAfterVersion = urlParts.slice(uploadIndex + 2).join('/');
-                        const publicId = pathAfterVersion.replace(/\.[^/.]+$/, '');
-                        
-                        try {
-                            const resourceType = filePath.includes('/image/') ? 'image' : 
-                                               filePath.includes('/video/') ? 'video' : 'raw';
-                            
-                            await cloudinary.uploader.destroy(publicId, {
-                                resource_type: resourceType
-                            });
-                            console.log(`Successfully deleted file from Cloudinary: ${publicId}`);
-                            return true;
-                        } catch (cloudinaryError) {
-                            console.error('Error deleting from Cloudinary:', cloudinaryError);
-                            return false;
-                        }
-                    }
+                    s3Key = rows[0].cloudinary_public_id;
+                }
+            }
+            
+            if (s3Key) {
+                try {
+                    const deleteCommand = new DeleteObjectCommand({
+                        Bucket: BUCKET_NAME,
+                        Key: s3Key
+                    });
+                    
+                    await s3Client.send(deleteCommand);
+                    console.log(`Successfully deleted file from S3: ${s3Key}`);
+                    return true;
+                } catch (s3Error) {
+                    console.error('Error deleting from S3:', s3Error);
+                    return false;
                 }
             } else {
                 // Fallback: Delete from local disk
@@ -394,6 +378,161 @@ class FileStorageService {
         } catch (error) {
             console.error('Error deleting file by path:', error);
             throw new Error('Failed to delete file');
+        }
+    }
+
+    // ============================================================================
+    // REPORT METHODS
+    // ============================================================================
+
+    // Generate S3 key for reports (separate folder)
+    generateReportS3Key(originalName, applicationId) {
+        const fileName = this.generateFileName(originalName, applicationId);
+        const env = process.env.NODE_ENV || 'development';
+        const envPrefix = env === 'production' ? 'production' : 'development';
+        // S3 key: development/applications/{applicationId}/reports/{filename}
+        return `${envPrefix}/applications/${applicationId}/reports/${fileName}`;
+    }
+
+    // Save report file to S3
+    async saveReport(file, applicationId) {
+        try {
+            const s3Key = this.generateReportS3Key(file.originalname, applicationId);
+            
+            // Upload to S3
+            const uploadCommand = new PutObjectCommand({
+                Bucket: BUCKET_NAME,
+                Key: s3Key,
+                Body: file.buffer,
+                ContentType: file.mimetype,
+                Metadata: {
+                    'original-name': file.originalname,
+                    'application-id': applicationId.toString(),
+                    'file-type': 'report'
+                }
+            });
+
+            await s3Client.send(uploadCommand);
+
+            // Generate S3 URL
+            const s3Url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${s3Key}`;
+            
+            return {
+                fileName: path.basename(file.originalname),
+                filePath: s3Url,
+                s3Key: s3Key,
+                originalName: file.originalname,
+                size: file.size,
+                mimeType: file.mimetype
+            };
+        } catch (error) {
+            console.error('Error saving report to S3:', error);
+            throw new Error('Failed to save report to S3');
+        }
+    }
+
+    // Save report information to database
+    async saveReportToDatabase(fileInfo, applicationId, uploadedBy) {
+        try {
+            const [result] = await pool.execute(
+                `INSERT INTO application_reports 
+                (application_id, report_name, file_path, s3_key, file_size, mime_type, uploaded_by) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    applicationId,
+                    fileInfo.originalName,
+                    fileInfo.filePath,
+                    fileInfo.s3Key,
+                    fileInfo.size,
+                    fileInfo.mimeType,
+                    uploadedBy
+                ]
+            );
+            return result.insertId;
+        } catch (error) {
+            console.error('Error saving report to database:', error);
+            throw new Error(`Failed to save report information to database: ${error.message}`);
+        }
+    }
+
+    // Get reports for an application
+    async getApplicationReports(applicationId) {
+        try {
+            const [rows] = await pool.execute(
+                `SELECT r.*, u.first_name, u.last_name, u.email as uploaded_by_email
+                 FROM application_reports r
+                 LEFT JOIN users u ON r.uploaded_by = u.id
+                 WHERE r.application_id = ? 
+                 ORDER BY r.uploaded_at DESC`,
+                [applicationId]
+            );
+            return rows;
+        } catch (error) {
+            console.error('Error fetching application reports:', error);
+            throw new Error('Failed to fetch application reports');
+        }
+    }
+
+    // Delete report from S3 and database
+    async deleteReport(reportId) {
+        try {
+            if (!reportId || isNaN(parseInt(reportId))) {
+                throw new Error('Invalid report ID');
+            }
+
+            const docId = parseInt(reportId);
+            
+            // Get report info from database
+            const [rows] = await pool.execute(
+                `SELECT file_path, s3_key FROM application_reports WHERE id = ?`,
+                [docId]
+            );
+            
+            if (rows.length === 0) {
+                console.log(`Report with ID ${docId} not found in database`);
+                return false;
+            }
+            
+            const report = rows[0];
+            let s3Key = report.s3_key;
+            
+            // If s3_key is not in database, try to extract from file_path
+            if (!s3Key && report.file_path) {
+                s3Key = this.extractS3Key({ file_path: report.file_path });
+            }
+            
+            // Delete from S3 if key exists
+            if (s3Key) {
+                try {
+                    const deleteCommand = new DeleteObjectCommand({
+                        Bucket: BUCKET_NAME,
+                        Key: s3Key
+                    });
+                    
+                    await s3Client.send(deleteCommand);
+                    console.log(`Report deleted from S3: ${s3Key}`);
+                } catch (s3Error) {
+                    console.error('Error deleting report from S3:', s3Error);
+                    // Continue with database deletion even if S3 deletion fails
+                }
+            }
+            
+            // Delete record from database
+            const [deleteResult] = await pool.execute(
+                `DELETE FROM application_reports WHERE id = ?`,
+                [docId]
+            );
+            
+            if (deleteResult.affectedRows === 0) {
+                console.log(`No report deleted from database for ID: ${docId}`);
+                return false;
+            }
+            
+            console.log(`Report ${docId} deleted successfully`);
+            return true;
+        } catch (error) {
+            console.error('Error deleting report:', error);
+            throw new Error(`Failed to delete report: ${error.message}`);
         }
     }
 }

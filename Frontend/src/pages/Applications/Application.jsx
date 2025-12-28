@@ -6,6 +6,9 @@ import IconButton from '@mui/material/IconButton';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import GetAppIcon from '@mui/icons-material/GetApp';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import DescriptionIcon from '@mui/icons-material/Description';
+import ReportUploadModal from '@/components/ReportUploadModal';
 import { Select, MenuItem, FormControl, InputLabel, Box } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -29,7 +32,10 @@ const Application = () => {
   const [editModal, setEditModal] = useState(false);
   const [applicationToEdit, setApplicationToEdit] = useState(null);
   const [exporting, setExporting] = useState(false);
-  
+  const [reportUploadModal, setReportUploadModal] = useState(false);
+  const [selectedApplicationForReport, setSelectedApplicationForReport] = useState(null);
+  const [reports, setReports] = useState({}); // Store reports by application ID
+
   // Filter states
   const [selectedCompany, setSelectedCompany] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState('');
@@ -39,13 +45,13 @@ const Application = () => {
   const [employees, setEmployees] = useState([]);
   const [loadingFilters, setLoadingFilters] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState({});
-  
+
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalApplications, setTotalApplications] = useState(0);
   const pageSize = 10;
-  
+
   const toggleImportModal = () => setImportModal(!importModal);
   const toggleEditModal = () => setEditModal(!editModal);
 
@@ -62,18 +68,18 @@ const Application = () => {
       try {
         setLoadingFilters(true);
         apiService.setToken(token);
-        
+
         // Fetch companies and employees in parallel
         // Use includeAll=true to get all companies for filtering (not just those without parents)
         const [companiesResult, employeesResult] = await Promise.all([
           apiService.getCompaniesDropdown(null, false, true),
           apiService.getAllEmployees()
         ]);
-        
+
         if (companiesResult.success) {
           setCompanies(companiesResult.data || []);
         }
-        
+
         if (employeesResult.success) {
           setEmployees(employeesResult.data || []);
         }
@@ -88,6 +94,28 @@ const Application = () => {
       fetchFilters();
     }
   }, [token]);
+
+  // Fetch reports for all applications
+  const fetchReportsForApplications = async (applicationIds) => {
+    try {
+      const reportsMap = {};
+      await Promise.all(
+        applicationIds.map(async (appId) => {
+          try {
+            const response = await apiService.getApplicationReports(appId);
+            if (response.success && response.data && response.data.length > 0) {
+              reportsMap[appId] = response.data;
+            }
+          } catch (err) {
+            console.error(`Error fetching reports for application ${appId}:`, err);
+          }
+        })
+      );
+      setReports(reportsMap);
+    } catch (err) {
+      console.error('Error fetching reports:', err);
+    }
+  };
 
   // Fetch applications from API
   useEffect(() => {
@@ -127,10 +155,16 @@ const Application = () => {
         const response = await apiService.getAllApplications(filters);
 
         if (response.success) {
-          setApplications(response.data || []);
+          const apps = response.data || [];
+          setApplications(apps);
           if (response.pagination) {
             setTotalPages(response.pagination.totalPages || 1);
             setTotalApplications(response.pagination.total || 0);
+          }
+          // Fetch reports for all applications
+          const applicationIds = apps.map(app => app.id);
+          if (applicationIds.length > 0) {
+            fetchReportsForApplications(applicationIds);
           }
         } else {
           setError(response.message || 'Failed to fetch applications');
@@ -159,7 +193,7 @@ const Application = () => {
       try {
         setLoading(true);
         apiService.setToken(token);
-        
+
         // Build filters object with current pagination
         const filters = {
           page: currentPage,
@@ -186,7 +220,7 @@ const Application = () => {
             filters.date_end = endOfDay.toISOString();
           }
         }
-        
+
         const response = await apiService.getAllApplications(filters);
         if (response.success) {
           setApplications(response.data || []);
@@ -246,7 +280,7 @@ const Application = () => {
       setExporting(true);
       apiService.setToken(token);
       const result = await apiService.exportApplicationsToExcel();
-      
+
       if (result.success) {
         toast.success('Applications exported to Excel successfully');
       } else {
@@ -354,7 +388,7 @@ const Application = () => {
       field: 'rejection_reason',
       headerName: 'Remark',
       flex: 1,
-      minWidth: 200,
+      minWidth: 110,
       headerAlign: 'left',
       renderCell: (params) => {
         const applicationId = params.row.id;
@@ -401,34 +435,60 @@ const Application = () => {
       field: 'actions',
       headerName: 'Actions',
       flex: 1,
-      minWidth: 120,
+      minWidth: 200,
       headerAlign: 'center',
       align: 'center',
       sortable: false,
-      renderCell: (params) => (
-        <div className="datatable-cell-content" style={{ justifyContent: 'center', gap: '8px' }}>
-          {user?.user_type === 'admin' && (
-            <>
+      renderCell: (params) => {
+        const applicationId = params.row.id;
+        const applicationReports = reports[applicationId] || [];
+        const hasReports = applicationReports.length > 0;
+
+        return (
+          <div className="datatable-cell-content" style={{ gap: '8px', flexWrap: 'wrap' }}>
+            {/* Report Upload Button */}
+            <IconButton
+              size="small"
+              onClick={() => {
+                setSelectedApplicationForReport(applicationId);
+                setReportUploadModal(true);
+              }}
+              title="Upload Report"
+              style={{ color: '#2e7d32' }}
+            >
+              <UploadFileIcon fontSize="small" />
+            </IconButton>
+
+            {/* Report Download Button */}
+            {hasReports && (
               <IconButton
                 size="small"
-                onClick={() => handleEditClick(params.row)}
-                title="Edit Application"
+                onClick={() => handleDownloadReport(applicationId)}
+                title="Download Report"
                 style={{ color: '#1976d2' }}
               >
-                <EditOutlinedIcon fontSize="small" />
+                <DescriptionIcon fontSize="small" />
               </IconButton>
-              <IconButton
-                size="small"
-                onClick={() => handleDeleteClick(params.row)}
-                title="Delete Application"
-                style={{ color: '#d32f2f' }}
-              >
-                <DeleteOutlineIcon fontSize="small" />
-              </IconButton>
-            </>
-          )}
-        </div>
-      )
+            )}
+            <IconButton
+              size="small"
+              onClick={() => handleEditClick(params.row)}
+              title="Edit Application"
+              style={{ color: '#1976d2' }}
+            >
+              <EditOutlinedIcon fontSize="small" />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={() => handleDeleteClick(params.row)}
+              title="Delete Application"
+              style={{ color: '#d32f2f' }}
+            >
+              <DeleteOutlineIcon fontSize="small" />
+            </IconButton>
+          </div>
+        );
+      }
     }
   ];
 
@@ -462,6 +522,56 @@ const Application = () => {
 
   const handlePageChange = (event, value) => {
     setCurrentPage(value);
+  };
+
+  const handleDownloadReport = async (applicationId) => {
+    try {
+      const applicationReports = reports[applicationId] || [];
+      if (applicationReports.length === 0) {
+        toast.error('No reports available for this application');
+        return;
+      }
+
+      // Get the most recent report
+      const latestReport = applicationReports[0];
+
+      // Get pre-signed URL from backend
+      const token = localStorage.getItem('auth_token');
+      apiService.setToken(token);
+
+      const response = await apiService.getReportDownloadUrl(latestReport.id);
+      if (response.success && response.url) {
+        // Create a temporary link and trigger download
+        const link = document.createElement('a');
+        link.href = response.url;
+        link.download = response.fileName || 'report.pdf';
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success('Report download started');
+      } else {
+        toast.error(response.message || 'Failed to download report');
+      }
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      toast.error('Failed to download report');
+    }
+  };
+
+  const handleReportUploadComplete = () => {
+    // Refresh reports for the selected application
+    if (selectedApplicationForReport) {
+      apiService.setToken(token);
+      apiService.getApplicationReports(selectedApplicationForReport).then(response => {
+        if (response.success && response.data) {
+          setReports(prev => ({
+            ...prev,
+            [selectedApplicationForReport]: response.data
+          }));
+        }
+      });
+    }
   };
 
   return (
@@ -666,16 +776,16 @@ const Application = () => {
           </Button>
         </ModalFooter>
       </Modal>
-      <Import 
-        modal={importModal} 
-        toggle={toggleImportModal} 
+      <Import
+        modal={importModal}
+        toggle={toggleImportModal}
         onImportComplete={() => {
           // Refresh applications list after import
           const fetchApplications = async () => {
             try {
               setLoading(true);
               apiService.setToken(token);
-              
+
               // Build filters object
               const filters = {
                 page: currentPage,
@@ -702,7 +812,7 @@ const Application = () => {
                   filters.date_end = endOfDay.toISOString();
                 }
               }
-              
+
               const response = await apiService.getAllApplications(filters);
               if (response.success) {
                 setApplications(response.data || []);
@@ -724,6 +834,17 @@ const Application = () => {
           onUpdateComplete={handleEditComplete}
         />
       )}
+
+      {/* Report Upload Modal */}
+      <ReportUploadModal
+        isOpen={reportUploadModal}
+        toggle={() => {
+          setReportUploadModal(false);
+          setSelectedApplicationForReport(null);
+        }}
+        applicationId={selectedApplicationForReport}
+        onUploadComplete={handleReportUploadComplete}
+      />
     </div>
   );
 };

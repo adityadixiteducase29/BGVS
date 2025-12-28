@@ -45,6 +45,29 @@ const uploadDocuments = multer({
     }
 });
 
+// Configure multer for report uploads (PDFs only)
+const uploadReport = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 20 * 1024 * 1024 // 20MB limit for reports
+    },
+    fileFilter: (req, file, cb) => {
+        // Allow PDFs and common document formats
+        const allowedMimes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ];
+        
+        if (allowedMimes.includes(file.mimetype) || 
+            /\.(pdf|doc|docx)$/i.test(file.originalname)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only PDF and Word documents are allowed for reports'), false);
+        }
+    }
+});
+
 // Public routes (no authentication required)
 // These are used by the UserForm to submit applications
 
@@ -150,6 +173,32 @@ router.post('/companies/:companyId/import-csv',
 router.get('/export/excel', 
     requireAdmin, 
     ApplicationController.exportToExcel
+);
+
+// Report routes (Admin and Verifier)
+// Upload report for an application
+router.post('/:id/reports', 
+    authenticate,
+    uploadReport.single('report'),
+    ApplicationController.uploadReport
+);
+
+// Get reports for an application
+router.get('/:id/reports', 
+    authenticate,
+    ApplicationController.getApplicationReports
+);
+
+// Get pre-signed URL for report download
+router.get('/reports/:reportId/download', 
+    authenticate,
+    ApplicationController.getReportDownloadUrl
+);
+
+// Delete report (Admin or report uploader)
+router.delete('/reports/:reportId', 
+    authenticate,
+    ApplicationController.deleteReport
 );
 
 module.exports = router;

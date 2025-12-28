@@ -1264,6 +1264,217 @@ class ApplicationController {
             });
         }
     }
+
+    // ============================================================================
+    // REPORT METHODS
+    // ============================================================================
+
+    // Upload report for an application
+    static async uploadReport(req, res) {
+        try {
+            const { id } = req.params;
+            const userId = req.user.id;
+
+            // Validate application exists
+            const application = await Application.findById(id);
+            if (!application) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Application not found'
+                });
+            }
+
+            // Check if file was uploaded
+            if (!req.file) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No file uploaded'
+                });
+            }
+
+            const fileStorageService = new FileStorageService();
+            
+            // Save report to S3
+            const fileInfo = await fileStorageService.saveReport(req.file, id);
+            
+            // Save report info to database
+            const reportId = await fileStorageService.saveReportToDatabase(fileInfo, id, userId);
+
+            res.status(201).json({
+                success: true,
+                message: 'Report uploaded successfully',
+                data: {
+                    id: reportId,
+                    reportName: fileInfo.originalName,
+                    fileSize: fileInfo.size,
+                    uploadedAt: new Date()
+                }
+            });
+
+        } catch (error) {
+            console.error('Error uploading report:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to upload report',
+                error: error.message
+            });
+        }
+    }
+
+    // Get reports for an application
+    static async getApplicationReports(req, res) {
+        try {
+            const { id } = req.params;
+
+            // Validate application exists
+            const application = await Application.findById(id);
+            if (!application) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Application not found'
+                });
+            }
+
+            const fileStorageService = new FileStorageService();
+            const reports = await fileStorageService.getApplicationReports(id);
+
+            res.status(200).json({
+                success: true,
+                data: reports
+            });
+
+        } catch (error) {
+            console.error('Error fetching reports:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to fetch reports',
+                error: error.message
+            });
+        }
+    }
+
+    // Get pre-signed URL for report download
+    static async getReportDownloadUrl(req, res) {
+        try {
+            const { reportId } = req.params;
+
+            const { pool } = require('../config/database');
+            const [reportRows] = await pool.execute(
+                `SELECT * FROM application_reports WHERE id = ?`,
+                [reportId]
+            );
+
+            if (reportRows.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Report not found'
+                });
+            }
+
+            const report = reportRows[0];
+            const fileStorageService = new FileStorageService();
+            
+            // Extract S3 key
+            let s3Key = report.s3_key;
+            if (!s3Key && report.file_path) {
+                s3Key = fileStorageService.extractS3Key({ file_path: report.file_path });
+            }
+
+            if (!s3Key) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Report file not found in storage'
+                });
+            }
+
+            // Generate pre-signed URL (expires in 1 hour)
+            const { s3Client, BUCKET_NAME } = require('../config/s3');
+            const { GetObjectCommand } = require('@aws-sdk/client-s3');
+            const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+
+            const expiresIn = 3600; // 1 hour
+            const getObjectCommand = new GetObjectCommand({
+                Bucket: BUCKET_NAME,
+                Key: s3Key,
+                ResponseContentDisposition: `attachment; filename="${encodeURIComponent(report.report_name)}"`,
+                ResponseContentType: report.mime_type || 'application/pdf'
+            });
+
+            const signedUrl = await getSignedUrl(s3Client, getObjectCommand, { expiresIn });
+
+            res.status(200).json({
+                success: true,
+                url: signedUrl,
+                fileName: report.report_name,
+                expiresAt: Math.floor(Date.now() / 1000) + expiresIn
+            });
+
+        } catch (error) {
+            console.error('Error generating report download URL:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to generate download URL',
+                error: error.message
+            });
+        }
+    }
+
+    // Delete report
+    static async deleteReport(req, res) {
+        try {
+            const { reportId } = req.params;
+            const userId = req.user.id;
+
+            const fileStorageService = new FileStorageService();
+            
+            // Check if report exists and get application ID for permission check
+            const { pool } = require('../config/database');
+            const [reportRows] = await pool.execute(
+                `SELECT application_id, uploaded_by FROM application_reports WHERE id = ?`,
+                [reportId]
+            );
+
+            if (reportRows.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Report not found'
+                });
+            }
+
+            const report = reportRows[0];
+            
+            // Check permissions: Admin can delete any report, others can only delete their own
+            if (req.user.user_type !== 'admin' && report.uploaded_by !== userId) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'You do not have permission to delete this report'
+                });
+            }
+
+            // Delete report
+            const deleted = await fileStorageService.deleteReport(reportId);
+
+            if (deleted) {
+                res.status(200).json({
+                    success: true,
+                    message: 'Report deleted successfully'
+                });
+            } else {
+                res.status(404).json({
+                    success: false,
+                    message: 'Report not found'
+                });
+            }
+
+        } catch (error) {
+            console.error('Error deleting report:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to delete report',
+                error: error.message
+            });
+        }
+    }
 }
 
 module.exports = ApplicationController;
