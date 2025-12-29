@@ -1,10 +1,12 @@
 import './index.css';
 import Datatable from "@/components/Datatable";
 import React, { useState, useEffect } from 'react';
-import { Box } from '@mui/material';
+import { Box, IconButton } from '@mui/material';
+import DescriptionIcon from '@mui/icons-material/Description';
 import apiService from '@/services/api';
 import { useSelector } from 'react-redux';
 import { Popover, PopoverBody } from 'reactstrap';
+import { toast } from 'react-toastify';
 
 const ClientApplication = () => {
   const { token, user } = useSelector((state) => state.auth);
@@ -14,6 +16,9 @@ const ClientApplication = () => {
 
   // Filter states
   const [popoverOpen, setPopoverOpen] = useState({});
+
+  // Reports states
+  const [reports, setReports] = useState({}); // Store reports by application ID
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -27,6 +32,28 @@ const ClientApplication = () => {
       ...prev,
       [applicationId]: !prev[applicationId]
     }));
+  };
+
+  // Fetch reports for all applications
+  const fetchReportsForApplications = async (applicationIds) => {
+    try {
+      const reportsMap = {};
+      await Promise.all(
+        applicationIds.map(async (appId) => {
+          try {
+            const response = await apiService.getApplicationReports(appId);
+            if (response.success && response.data && response.data.length > 0) {
+              reportsMap[appId] = response.data;
+            }
+          } catch (err) {
+            console.error(`Error fetching reports for application ${appId}:`, err);
+          }
+        })
+      );
+      setReports(reportsMap);
+    } catch (err) {
+      console.error('Error fetching reports:', err);
+    }
   };
 
   // Fetch applications from API
@@ -47,10 +74,16 @@ const ClientApplication = () => {
         const response = await apiService.getCompanyApplications(filters);
 
         if (response.success) {
-          setApplications(response.data || []);
+          const apps = response.data || [];
+          setApplications(apps);
           if (response.pagination) {
             setTotalPages(response.pagination.totalPages || 1);
             setTotalApplications(response.pagination.total || 0);
+          }
+          // Fetch reports for all applications
+          const applicationIds = apps.map(app => app.id);
+          if (applicationIds.length > 0) {
+            fetchReportsForApplications(applicationIds);
           }
         } else {
           setError(response.message || 'Failed to fetch applications');
@@ -148,7 +181,7 @@ const ClientApplication = () => {
       field: 'rejection_reason',
       headerName: 'Remark',
       flex: 1,
-      minWidth: 200,
+      minWidth: 150,
       headerAlign: 'left',
       renderCell: (params) => {
         const applicationId = params.row.id;
@@ -190,11 +223,66 @@ const ClientApplication = () => {
           </div>
         );
       }
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      flex: 1,
+      minWidth: 120,
+      headerAlign: 'center',
+      align: 'center',
+      sortable: false,
+      renderCell: (params) => {
+        const applicationId = params.row.id;
+        const applicationReports = reports[applicationId] || [];
+        const hasReports = applicationReports.length > 0;
+
+        return (
+          <div className="datatable-cell-content" style={{ display: 'flex', gap: '8px' }}>
+            {hasReports && (
+              <IconButton
+                size="small"
+                onClick={() => handleReportView(applicationId)}
+                title="View Report"
+                style={{ color: '#1976d2' }}
+              >
+                <DescriptionIcon fontSize="small" />
+              </IconButton>
+            )}
+          </div>
+        );
+      }
     }
   ];
 
   const handlePageChange = (event, value) => {
     setCurrentPage(value);
+  };
+
+  // Handle report view - opens most recent report in new tab
+  const handleReportView = async (applicationId) => {
+    try {
+      const applicationReports = reports[applicationId] || [];
+      if (applicationReports.length === 0) {
+        toast.error('No reports available for this application');
+        return;
+      }
+
+      // Get the most recent report (first one in the array, as they're usually sorted by date)
+      const latestReport = applicationReports[0];
+      
+      apiService.setToken(token);
+      const response = await apiService.getReportDownloadUrl(latestReport.id);
+      if (response.success && response.url) {
+        // Open report in new tab
+        window.open(response.url, '_blank');
+      } else {
+        toast.error(response.message || 'Failed to load report');
+      }
+    } catch (error) {
+      console.error('Error loading report:', error);
+      toast.error('Failed to load report');
+    }
   };
 
   return (
