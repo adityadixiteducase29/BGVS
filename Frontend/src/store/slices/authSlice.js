@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import apiService from '../../services/api';
+import AuthStorage from '../../utils/storage';
 
 // Async thunks
 export const loginUser = createAsyncThunk(
@@ -87,15 +88,31 @@ export const changeUserPassword = createAsyncThunk(
   }
 );
 
-// Initial state
-const initialState = {
-  token: null,
-  user: null,
-  isAuthenticated: false,
-  loading: false,
-  error: null,
-  lastFetched: null,
+// Initialize state from localStorage if available
+const getInitialState = () => {
+  const storedAuth = AuthStorage.getAuth();
+  if (storedAuth) {
+    return {
+      token: storedAuth.token,
+      user: storedAuth.user,
+      isAuthenticated: true,
+      loading: false,
+      error: null,
+      lastFetched: storedAuth.timestamp || Date.now(),
+    };
+  }
+  return {
+    token: null,
+    user: null,
+    isAuthenticated: false,
+    loading: false,
+    error: null,
+    lastFetched: null,
+  };
 };
+
+// Initial state
+const initialState = getInitialState();
 
 // Auth slice
 const authSlice = createSlice({

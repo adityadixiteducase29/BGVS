@@ -5,7 +5,6 @@ import { store } from './store/store'
 import { useAppSelector, useAppDispatch } from './store/hooks'
 import { selectIsAuthenticated, selectUser, selectToken, setCredentials, clearCredentials } from './store/slices/authSlice'
 import { useApiToken } from './hooks/useApiToken'
-import { useRoutePersistence } from './hooks/useRoutePersistence'
 import AuthStorage from './utils/storage'
 import DashboardLayout from './components/DashboardLayout'
 import Dashboard from './pages/Dashboard/Dashboard'
@@ -29,17 +28,17 @@ import ClientApplication from './pages/ClientDashboard/ClientApplication/Applica
 const ProtectedRoute = ({ children, requiredRole = null }) => {
   const dispatch = useAppDispatch();
   const { user, isAuthenticated, loading, token } = useAppSelector(state => state.auth);
-  const { restoreRoute } = useRoutePersistence();
 
   // Sync API service token with Redux
   useApiToken();
 
-  // Check localStorage on mount and restore auth state if available
+  // Check localStorage on mount and restore auth state if available (fallback only)
+  // Note: State is already initialized from localStorage in the store, but this is a safety check
   useEffect(() => {
     const checkStoredAuth = () => {
       const storedAuth = AuthStorage.getAuth();
-      if (storedAuth && !isAuthenticated) {
-        console.log('🔄 Restoring auth state from localStorage');
+      if (storedAuth && !isAuthenticated && !loading) {
+        console.log('🔄 Restoring auth state from localStorage (fallback)');
         dispatch(setCredentials({
           token: storedAuth.token,
           ...storedAuth.user
@@ -47,8 +46,11 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
       }
     };
 
-    checkStoredAuth();
-  }, [dispatch, isAuthenticated]);
+    // Only check if not already authenticated
+    if (!isAuthenticated) {
+      checkStoredAuth();
+    }
+  }, [dispatch, isAuthenticated, loading]);
 
   // Fetch user profile if we have a token but no user data
   useEffect(() => {
@@ -57,16 +59,6 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
       console.log('Token available, user data should be restored from localStorage');
     }
   }, [token, user, loading]);
-
-  // Restore route after authentication is restored
-  useEffect(() => {
-    if (isAuthenticated && user && !loading) {
-      // Small delay to ensure everything is loaded
-      setTimeout(() => {
-        restoreRoute();
-      }, 100);
-    }
-  }, [isAuthenticated, user, loading, restoreRoute]);
 
   if (loading) {
     return (
@@ -156,7 +148,7 @@ const LoginRoute = () => {
         case 'company':
           return '/company-dashboard';
         default:
-          return localStorage.getItem('lastRoute') || '/dashboard';
+          return '/dashboard';
       }
     })();
     return <Navigate to={redirectPath} replace />;
@@ -180,7 +172,7 @@ const AppRoutes = () => {
       {/* Root redirect */}
       <Route path="/" element={
         isAuthenticated ? (
-          <Navigate to={localStorage.getItem('lastRoute') || '/dashboard'} replace />
+          <Navigate to="/dashboard" replace />
         ) : (
           <Navigate to="/login" replace />
         )
