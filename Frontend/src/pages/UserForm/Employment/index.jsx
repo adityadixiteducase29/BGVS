@@ -530,7 +530,7 @@ const EmploymentDetails = ({ formData, updateFormData }) => {
             </div>
 
             {/* Bank Statement Upload */}
-            <div className="upload-box">
+            {/* <div className="upload-box">
               <div className="upload-content">
                 <img src={Upload} alt="Upload" className="upload-icon" />
                 <div>
@@ -547,7 +547,7 @@ const EmploymentDetails = ({ formData, updateFormData }) => {
                 accept=".jpg,.jpeg,.png,.pdf"
                 id="bankStatementUpload"
               />
-            </div>
+            </div> */}
 
             {/* Employment Check Result Upload */}
             <div className="upload-box">

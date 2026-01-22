@@ -5,15 +5,27 @@ import { Box, IconButton } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import apiService from '@/services/api';
 import { useSelector } from 'react-redux';
-import { Popover, PopoverBody } from 'reactstrap';
+import { Popover, PopoverBody, Modal, ModalHeader, ModalBody, ModalFooter, Button } from 'reactstrap';
 import { toast } from 'react-toastify';
-
 const ClientApplication = () => {
   const { token, user } = useSelector((state) => state.auth);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [file, setFile] = useState(null);
+  const [type, setType] = useState(null);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportName, setReportName] = useState('');
+  
+  // Cleanup blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (file && file.startsWith('blob:')) {
+        URL.revokeObjectURL(file);
+      }
+    };
+  }, [file]);
+  
   // Filter states
   const [popoverOpen, setPopoverOpen] = useState({});
 
@@ -274,8 +286,35 @@ const ClientApplication = () => {
       apiService.setToken(token);
       const response = await apiService.getReportDownloadUrl(latestReport.id);
       if (response.success && response.url) {
-        // Open report in new tab
-        window.open(response.url, '_blank');
+        setReportName(latestReport.report_name || 'Report');
+        
+        // Check if URL has attachment disposition (will cause download in iframe)
+        const hasAttachment = response.url.includes('response-content-disposition=attachment');
+        
+        if (hasAttachment) {
+          try {
+            // Fetch the file as a blob to avoid download
+            const fetchResponse = await fetch(response.url);
+            if (!fetchResponse.ok) {
+              throw new Error(`Failed to fetch file: ${fetchResponse.status}`);
+            }
+            
+            const blob = await fetchResponse.blob();
+            // Create a blob URL for iframe (won't trigger download)
+            const blobUrl = URL.createObjectURL(blob);
+            setFile(blobUrl);
+            setType("pdf");
+            setReportModalOpen(true);
+          } catch (fetchError) {
+            console.error('Error fetching file as blob:', fetchError);
+            toast.error('Failed to load report');
+          }
+        } else {
+          // Use original URL if no attachment disposition
+          setFile(response.url);
+          setType("pdf");
+          setReportModalOpen(true);
+        }
       } else {
         toast.error(response.message || 'Failed to load report');
       }
@@ -323,6 +362,90 @@ const ClientApplication = () => {
           </>
         )}
       </div>
+
+      {/* Report View Modal */}
+      <Modal 
+        isOpen={reportModalOpen} 
+        toggle={() => {
+          setReportModalOpen(false);
+          // Clean up blob URL when closing
+          if (file && file.startsWith('blob:')) {
+            URL.revokeObjectURL(file);
+          }
+          setFile(null);
+          setType(null);
+          setReportName('');
+        }}
+        size="xl"
+        centered
+        style={{ maxWidth: '90vw' }}
+      >
+        <ModalHeader toggle={() => {
+          setReportModalOpen(false);
+          if (file && file.startsWith('blob:')) {
+            URL.revokeObjectURL(file);
+          }
+          setFile(null);
+          setType(null);
+          setReportName('');
+        }}>
+          {reportName || 'Report Viewer'}
+        </ModalHeader>
+        <ModalBody style={{ padding: 0, minHeight: '500px', maxHeight: '80vh' }}>
+          {file && type ? (
+            <iframe
+              src={file}
+              style={{
+                width: '100%',
+                height: '80vh',
+                border: 'none',
+                minHeight: '500px'
+              }}
+              title="Report Viewer"
+            />
+          ) : (
+            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '500px' }}>
+              <div className="text-center">
+                <p>Loading report...</p>
+              </div>
+            </div>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          {file && (
+            <Button 
+              color="secondary" 
+              onClick={() => {
+                // If it's a blob URL, create a download link
+                if (file.startsWith('blob:')) {
+                  const link = document.createElement('a');
+                  link.href = file;
+                  link.download = reportName || 'report.pdf';
+                  link.click();
+                } else {
+                  window.open(file, '_blank');
+                }
+              }}
+            >
+              Open in New Tab
+            </Button>
+          )}
+          <Button 
+            color="secondary" 
+            onClick={() => {
+              setReportModalOpen(false);
+              if (file && file.startsWith('blob:')) {
+                URL.revokeObjectURL(file);
+              }
+              setFile(null);
+              setType(null);
+              setReportName('');
+            }}
+          >
+            Close
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 };

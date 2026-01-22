@@ -466,7 +466,7 @@ const Education = ({ formData, updateFormData }) => {
               <Col className="col-12">
                 <TextField
                   fullWidth
-                  label="Current Address"
+                  label="Institute Address"
                   placeholder="Enter"
                   variant="outlined"
                   InputLabelProps={{ shrink: true }}

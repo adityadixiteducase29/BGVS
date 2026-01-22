@@ -513,7 +513,7 @@ const Reference = ({ formData, updateFormData, companyId }) => {
         <Divider sx={{ my: 3 }} />
 
         {/* Current Address Section */}
-        <Box sx={{ mb: 4 }}>
+        {/* <Box sx={{ mb: 4 }}>
           <Row className="g-3">
             <Col className="col-12">
               <TextField
@@ -542,7 +542,7 @@ const Reference = ({ formData, updateFormData, companyId }) => {
               />
             </Col>
           </Row>
-        </Box>
+        </Box> */}
 
         {/* Dynamic Questions Section */}
         {questions.length > 0 && (
