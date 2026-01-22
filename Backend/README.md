@@ -10,6 +10,7 @@ A production-ready, scalable backend template built with Node.js, Express, and M
 - **Validation**: Request validation using express-validator
 - **Error Handling**: Global error handling and logging
 - **Environment Configuration**: Flexible configuration management
+- **Multi-Cloud Storage**: Switch between AWS S3 and DigitalOcean Spaces with a single environment variable
 - **API Documentation**: Well-structured REST API endpoints
 - **Production Ready**: Security headers, CORS, graceful shutdown
 
@@ -94,7 +95,25 @@ BCRYPT_ROUNDS=12
 
 # CORS Configuration
 CORS_ORIGIN=*
+
+# Storage Configuration (AWS S3 or DigitalOcean Spaces)
+# Set STORAGE_PROVIDER to 'aws' or 'digitalocean'
+STORAGE_PROVIDER=aws
+
+# AWS S3 Configuration (when STORAGE_PROVIDER=aws)
+AWS_S3_BUCKET_NAME=your-bucket-name
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your-access-key-id
+AWS_SECRET_ACCESS_KEY=your-secret-access-key
+
+# DigitalOcean Spaces Configuration (when STORAGE_PROVIDER=digitalocean)
+# DO_SPACES_BUCKET_NAME=your-spaces-bucket-name
+# DO_SPACES_REGION=nyc3
+# DO_SPACES_ACCESS_KEY=your-spaces-access-key
+# DO_SPACES_SECRET_KEY=your-spaces-secret-key
 ```
+
+**Note:** For detailed storage configuration, see [STORAGE_CONFIGURATION.md](./STORAGE_CONFIGURATION.md)
 
 ## 🗄️ Database Schema
 

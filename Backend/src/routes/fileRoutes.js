@@ -3,9 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
-const { s3Client, BUCKET_NAME } = require('../config/s3');
-const { GetObjectCommand } = require('@aws-sdk/client-s3');
-const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const StorageFactory = require('../services/storage/StorageFactory');
 
 const router = express.Router();
 
@@ -45,26 +43,28 @@ const authenticateFileAccess = async (req, res, next) => {
     }
 };
 
-// Helper function to extract S3 key from file
-function extractS3Key(file) {
-    // First try to get from s3_key column
+// Helper function to extract storage key from file (works with both AWS and DO)
+function extractStorageKey(file) {
+    // First try to get from storage_key column (new field)
+    if (file.storage_key) {
+        return file.storage_key;
+    }
+    
+    // Try s3_key column (backward compatibility)
     if (file.s3_key) {
         return file.s3_key;
     }
     
-    // If file_path is an S3 URL, extract the key
-    if (file.file_path && file.file_path.includes('.amazonaws.com/')) {
-        try {
-            const urlParts = file.file_path.split('.amazonaws.com/');
-            if (urlParts.length > 1) {
-                return urlParts[1];
-            }
-        } catch (error) {
-            console.error('Error extracting S3 key from URL:', error);
+    // If file_path exists, try to extract key using the appropriate provider
+    if (file.file_path) {
+        const provider = StorageFactory.getProviderForFile(file.file_path);
+        if (provider) {
+            const key = provider.extractKeyFromUrl(file.file_path);
+            if (key) return key;
         }
     }
     
-    // If file_path is just the S3 key (without full URL)
+    // If file_path is just the storage key (without full URL)
     if (file.file_path && (file.file_path.startsWith('development/') || file.file_path.startsWith('production/'))) {
         return file.file_path;
     }
@@ -96,36 +96,35 @@ router.get('/:fileId/presigned-url', authenticateFileAccess, async (req, res) =>
         
         const file = rows[0];
         
-        // Extract S3 key
-        const s3Key = extractS3Key(file);
+        // Extract storage key
+        const storageKey = extractStorageKey(file);
         
-        if (!s3Key) {
-            // If not in S3 yet, return the file_path directly (for backward compatibility with old files)
-            console.log(`⚠️  File not in S3, returning direct URL: ${file.file_path}`);
+        if (!storageKey) {
+            // If not in storage yet, return the file_path directly (for backward compatibility with old files)
+            console.log(`⚠️  File not in storage, returning direct URL: ${file.file_path}`);
             return res.json({
                 success: true,
                 url: file.file_path,
                 expiresAt: null,
                 fileName: file.document_name,
                 mimeType: file.mime_type,
-                isS3: false
+                isStorage: false
             });
         }
+        
+        // Get the appropriate provider for this file (could be AWS or DO)
+        const provider = StorageFactory.getProviderForFile(file.file_path) || StorageFactory.getStorageProvider();
         
         // Generate pre-signed URL (expires in 1 hour)
         const expiresIn = 3600; // 1 hour in seconds
         const expiresAt = Math.floor(Date.now() / 1000) + expiresIn;
         
-        const getObjectCommand = new GetObjectCommand({
-            Bucket: BUCKET_NAME,
-            Key: s3Key,
-            ResponseContentDisposition: `inline; filename="${encodeURIComponent(file.document_name)}"`,
-            ResponseContentType: file.mime_type || 'application/octet-stream'
+        const signedUrl = await provider.getSignedUrl(storageKey, expiresIn, {
+            filename: file.document_name,
+            contentType: file.mime_type || 'application/octet-stream'
         });
         
-        const signedUrl = await getSignedUrl(s3Client, getObjectCommand, { expiresIn });
-        
-        console.log(`✅ Generated pre-signed URL for file: ${fileId}`);
+        console.log(`✅ Generated pre-signed URL for file: ${fileId} (${provider.getProviderName()})`);
         
         return res.json({
             success: true,
@@ -133,7 +132,8 @@ router.get('/:fileId/presigned-url', authenticateFileAccess, async (req, res) =>
             expiresAt: expiresAt,
             fileName: file.document_name,
             mimeType: file.mime_type,
-            isS3: true
+            isStorage: true,
+            provider: provider.getProviderName()
         });
         
     } catch (error) {
@@ -170,25 +170,24 @@ router.get('/:fileId', authenticateFileAccess, async (req, res) => {
         const file = rows[0];
         console.log(`📄 File found: ${file.document_name} (${file.document_type})`);
         
-        // Extract S3 key
-        const s3Key = extractS3Key(file);
+        // Extract storage key
+        const storageKey = extractStorageKey(file);
         
-        if (s3Key) {
-            // File is in S3, generate pre-signed URL
+        if (storageKey) {
+            // File is in storage, generate pre-signed URL
             try {
+                // Get the appropriate provider for this file (could be AWS or DO)
+                const provider = StorageFactory.getProviderForFile(file.file_path) || StorageFactory.getStorageProvider();
+                
                 const expiresIn = 3600; // 1 hour
                 const expiresAt = Math.floor(Date.now() / 1000) + expiresIn;
                 
-                const getObjectCommand = new GetObjectCommand({
-                    Bucket: BUCKET_NAME,
-                    Key: s3Key,
-                    ResponseContentDisposition: `inline; filename="${encodeURIComponent(file.document_name)}"`,
-                    ResponseContentType: file.mime_type || 'application/octet-stream'
+                const signedUrl = await provider.getSignedUrl(storageKey, expiresIn, {
+                    filename: file.document_name,
+                    contentType: file.mime_type || 'application/octet-stream'
                 });
                 
-                const signedUrl = await getSignedUrl(s3Client, getObjectCommand, { expiresIn });
-                
-                console.log(`✅ Generated pre-signed URL for file: ${fileId}`);
+                console.log(`✅ Generated pre-signed URL for file: ${fileId} (${provider.getProviderName()})`);
                 
                 return res.json({
                     success: true,
@@ -196,10 +195,11 @@ router.get('/:fileId', authenticateFileAccess, async (req, res) => {
                     expiresAt: expiresAt,
                     fileName: file.document_name,
                     mimeType: file.mime_type,
-                    isS3: true
+                    isStorage: true,
+                    provider: provider.getProviderName()
                 });
-            } catch (s3Error) {
-                console.error('Error generating pre-signed URL:', s3Error);
+            } catch (storageError) {
+                console.error('Error generating pre-signed URL:', storageError);
                 return res.status(500).json({
                     success: false,
                     message: 'Failed to generate file URL'

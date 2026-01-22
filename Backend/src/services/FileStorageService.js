@@ -1,14 +1,19 @@
 const fs = require('fs');
 const path = require('path');
 const { pool } = require('../config/database');
-const { s3Client, BUCKET_NAME } = require('../config/s3');
-const { PutObjectCommand, DeleteObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
+const StorageFactory = require('./storage/StorageFactory');
 
 class FileStorageService {
     constructor() {
         // Keep uploadDir for backward compatibility (files not yet migrated)
         this.uploadDir = path.join(__dirname, '../../uploads');
         this.ensureUploadDir();
+        
+        // Get storage provider based on configuration
+        this.storageProvider = StorageFactory.getStorageProvider();
+        
+        // Log current storage provider
+        console.log(`📦 Using storage provider: ${this.storageProvider.getProviderName()}`);
     }
 
     // Ensure upload directory exists (for backward compatibility)
@@ -27,58 +32,63 @@ class FileStorageService {
         return `${applicationId}_${baseName}_${timestamp}_${randomString}${extension}`;
     }
 
-    // Generate S3 key (path in S3)
-    generateS3Key(originalName, applicationId) {
+    // Generate storage key (path in storage - works for both AWS S3 and DigitalOcean Spaces)
+    generateStorageKey(originalName, applicationId) {
         const fileName = this.generateFileName(originalName, applicationId);
         // Get environment identifier to prevent conflicts between dev/prod
         const env = process.env.NODE_ENV || 'development';
         const envPrefix = env === 'production' ? 'production' : 'development';
-        // S3 key: development/applications/{applicationId}/{filename}
+        // Storage key: development/applications/{applicationId}/{filename}
         return `${envPrefix}/applications/${applicationId}/${fileName}`;
     }
 
-    // Generate S3 key for reports (separate folder)
-    generateReportS3Key(originalName, applicationId) {
+    // Generate storage key for reports (separate folder)
+    generateReportStorageKey(originalName, applicationId) {
         const fileName = this.generateFileName(originalName, applicationId);
         const env = process.env.NODE_ENV || 'development';
         const envPrefix = env === 'production' ? 'production' : 'development';
-        // S3 key: development/applications/{applicationId}/reports/{filename}
+        // Storage key: development/applications/{applicationId}/reports/{filename}
         return `${envPrefix}/applications/${applicationId}/reports/${fileName}`;
     }
 
-    // Save file to S3
+    // Legacy method names for backward compatibility
+    generateS3Key(originalName, applicationId) {
+        return this.generateStorageKey(originalName, applicationId);
+    }
+
+    generateReportS3Key(originalName, applicationId) {
+        return this.generateReportStorageKey(originalName, applicationId);
+    }
+
+    // Save file to storage (AWS S3 or DigitalOcean Spaces)
     async saveFile(file, applicationId) {
         try {
-            const s3Key = this.generateS3Key(file.originalname, applicationId);
+            const storageKey = this.generateStorageKey(file.originalname, applicationId);
             
-            // Upload to S3
-            const uploadCommand = new PutObjectCommand({
-                Bucket: BUCKET_NAME,
-                Key: s3Key,
-                Body: file.buffer,
-                ContentType: file.mimetype,
-                Metadata: {
+            // Upload to storage provider
+            const result = await this.storageProvider.uploadFile(
+                file.buffer,
+                storageKey,
+                file.mimetype,
+                {
                     'original-name': file.originalname,
                     'application-id': applicationId.toString()
                 }
-            });
-
-            await s3Client.send(uploadCommand);
-
-            // Generate S3 URL (public URL - we'll use pre-signed URLs for access)
-            const s3Url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${s3Key}`;
+            );
             
             return {
                 fileName: path.basename(file.originalname),
-                filePath: s3Url, // S3 URL stored in database
-                s3Key: s3Key, // S3 key for deletion
+                filePath: result.filePath, // Storage URL stored in database
+                s3Key: result.storageKey, // Storage key for deletion (kept as s3Key for backward compatibility)
+                storageKey: result.storageKey, // New field name
+                storageProvider: result.provider, // Track which provider stored this file
                 originalName: file.originalname,
                 size: file.size,
                 mimeType: file.mimetype
             };
         } catch (error) {
-            console.error('Error saving file to S3:', error);
-            throw new Error('Failed to save file to S3');
+            console.error(`Error saving file to ${this.storageProvider.getProviderName()}:`, error);
+            throw new Error(`Failed to save file to ${this.storageProvider.getProviderName()}`);
         }
     }
 
@@ -178,7 +188,7 @@ class FileStorageService {
                     url: fileInfo.filePath // S3 URL
                 });
                 
-                console.log(`File saved to S3: ${file.fieldname} -> ${fileInfo.filePath}`);
+                console.log(`File saved to ${fileInfo.storageProvider || this.storageProvider.getProviderName()}: ${file.fieldname} -> ${fileInfo.filePath}`);
             } catch (error) {
                 console.error(`Error processing file ${file.fieldname}:`, error);
                 // Continue processing other files even if one fails
@@ -202,31 +212,40 @@ class FileStorageService {
         }
     }
 
-    // Extract S3 key from file path or database
-    extractS3Key(file) {
-        // First try to get from s3_key column
+    // Extract storage key from file path or database
+    // Works with both AWS S3 and DigitalOcean Spaces URLs
+    extractStorageKey(file) {
+        // First try to get from s3_key column (backward compatibility)
         if (file.s3_key) {
             return file.s3_key;
         }
         
-        // If file_path is an S3 URL, extract the key
-        if (file.file_path && file.file_path.includes('.amazonaws.com/')) {
-            try {
-                const urlParts = file.file_path.split('.amazonaws.com/');
-                if (urlParts.length > 1) {
-                    return urlParts[1];
-                }
-            } catch (error) {
-                console.error('Error extracting S3 key from URL:', error);
+        // Try to get from storage_key column (new field)
+        if (file.storage_key) {
+            return file.storage_key;
+        }
+        
+        // If file_path exists, try to extract key using the appropriate provider
+        if (file.file_path) {
+            // Get provider for this file (could be AWS or DO)
+            const provider = StorageFactory.getProviderForFile(file.file_path);
+            if (provider) {
+                const key = provider.extractKeyFromUrl(file.file_path);
+                if (key) return key;
             }
         }
         
-        // If file_path is just the S3 key (without full URL)
+        // If file_path is just the storage key (without full URL)
         if (file.file_path && (file.file_path.startsWith('development/') || file.file_path.startsWith('production/'))) {
             return file.file_path;
         }
         
         return null;
+    }
+
+    // Legacy method name for backward compatibility
+    extractS3Key(file) {
+        return this.extractStorageKey(file);
     }
 
     // Delete file from S3 and database
@@ -271,24 +290,21 @@ class FileStorageService {
                 return false;
             }
             
-            // Extract S3 key
-            const s3Key = this.extractS3Key(file);
+            // Extract storage key
+            const storageKey = this.extractStorageKey(file);
             
-            // Delete from S3 if key exists
-            if (s3Key) {
+            // Delete from storage if key exists
+            if (storageKey) {
                 try {
-                    const deleteCommand = new DeleteObjectCommand({
-                        Bucket: BUCKET_NAME,
-                        Key: s3Key
-                    });
-                    
-                    await s3Client.send(deleteCommand);
-                    console.log(`File deleted from S3: ${s3Key}`);
-                } catch (s3Error) {
-                    console.error('Error deleting from S3:', s3Error);
-                    // Continue with database deletion even if S3 deletion fails
+                    // Get the appropriate provider for this file (could be AWS or DO)
+                    const provider = StorageFactory.getProviderForFile(file.file_path) || this.storageProvider;
+                    await provider.deleteFile(storageKey);
+                    console.log(`File deleted from ${provider.getProviderName()}: ${storageKey}`);
+                } catch (storageError) {
+                    console.error(`Error deleting from storage:`, storageError);
+                    // Continue with database deletion even if storage deletion fails
                 }
-            } else if (file.file_path && !file.file_path.includes('.amazonaws.com') && !file.file_path.startsWith('development/') && !file.file_path.startsWith('production/')) {
+            } else if (file.file_path && !file.file_path.includes('.amazonaws.com') && !file.file_path.includes('.digitaloceanspaces.com') && !file.file_path.startsWith('development/') && !file.file_path.startsWith('production/')) {
                 // Fallback: Delete from local disk if not in S3 (for old files)
                 try {
                     if (fs.existsSync(file.file_path)) {
@@ -325,42 +341,31 @@ class FileStorageService {
     // Delete file by path (for bulk deletion)
     async deleteFileByPath(filePath) {
         try {
-            // Check if it's an S3 URL or key
-            let s3Key = null;
+            // Get the appropriate provider for this file
+            const provider = StorageFactory.getProviderForFile(filePath) || this.storageProvider;
+            const storageKey = provider.extractKeyFromUrl(filePath);
             
-            if (filePath && filePath.includes('.amazonaws.com/')) {
-                // Extract key from S3 URL
-                const urlParts = filePath.split('.amazonaws.com/');
-                if (urlParts.length > 1) {
-                    s3Key = urlParts[1];
-                }
-            } else if (filePath && (filePath.startsWith('development/') || filePath.startsWith('production/'))) {
-                // It's already an S3 key
-                s3Key = filePath;
-            } else {
+            let keyToDelete = storageKey;
+            
+            if (!keyToDelete && filePath) {
                 // Try to get from database
                 const [rows] = await pool.execute(
-                    `SELECT s3_key FROM application_documents WHERE file_path = ?`,
+                    `SELECT s3_key, storage_key FROM application_documents WHERE file_path = ?`,
                     [filePath]
                 );
                 
-                if (rows.length > 0 && rows[0].s3_key) {
-                    s3Key = rows[0].s3_key;
+                if (rows.length > 0) {
+                    keyToDelete = rows[0].storage_key || rows[0].s3_key;
                 }
             }
             
-            if (s3Key) {
+            if (keyToDelete) {
                 try {
-                    const deleteCommand = new DeleteObjectCommand({
-                        Bucket: BUCKET_NAME,
-                        Key: s3Key
-                    });
-                    
-                    await s3Client.send(deleteCommand);
-                    console.log(`Successfully deleted file from S3: ${s3Key}`);
+                    await provider.deleteFile(keyToDelete);
+                    console.log(`Successfully deleted file from ${provider.getProviderName()}: ${keyToDelete}`);
                     return true;
-                } catch (s3Error) {
-                    console.error('Error deleting from S3:', s3Error);
+                } catch (storageError) {
+                    console.error(`Error deleting from ${provider.getProviderName()}:`, storageError);
                     return false;
                 }
             } else {
@@ -393,40 +398,36 @@ class FileStorageService {
         return `${envPrefix}/applications/${applicationId}/reports/${fileName}`;
     }
 
-    // Save report file to S3
+    // Save report file to storage (AWS S3 or DigitalOcean Spaces)
     async saveReport(file, applicationId) {
         try {
-            const s3Key = this.generateReportS3Key(file.originalname, applicationId);
+            const storageKey = this.generateReportStorageKey(file.originalname, applicationId);
             
-            // Upload to S3
-            const uploadCommand = new PutObjectCommand({
-                Bucket: BUCKET_NAME,
-                Key: s3Key,
-                Body: file.buffer,
-                ContentType: file.mimetype,
-                Metadata: {
+            // Upload to storage provider
+            const result = await this.storageProvider.uploadFile(
+                file.buffer,
+                storageKey,
+                file.mimetype,
+                {
                     'original-name': file.originalname,
                     'application-id': applicationId.toString(),
                     'file-type': 'report'
                 }
-            });
-
-            await s3Client.send(uploadCommand);
-
-            // Generate S3 URL
-            const s3Url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${s3Key}`;
+            );
             
             return {
                 fileName: path.basename(file.originalname),
-                filePath: s3Url,
-                s3Key: s3Key,
+                filePath: result.filePath,
+                s3Key: result.storageKey, // Backward compatibility
+                storageKey: result.storageKey,
+                storageProvider: result.provider,
                 originalName: file.originalname,
                 size: file.size,
                 mimeType: file.mimetype
             };
         } catch (error) {
-            console.error('Error saving report to S3:', error);
-            throw new Error('Failed to save report to S3');
+            console.error(`Error saving report to ${this.storageProvider.getProviderName()}:`, error);
+            throw new Error(`Failed to save report to ${this.storageProvider.getProviderName()}`);
         }
     }
 
@@ -493,26 +494,23 @@ class FileStorageService {
             }
             
             const report = rows[0];
-            let s3Key = report.s3_key;
+            let storageKey = report.storage_key || report.s3_key;
             
-            // If s3_key is not in database, try to extract from file_path
-            if (!s3Key && report.file_path) {
-                s3Key = this.extractS3Key({ file_path: report.file_path });
+            // If storage key is not in database, try to extract from file_path
+            if (!storageKey && report.file_path) {
+                storageKey = this.extractStorageKey({ file_path: report.file_path });
             }
             
-            // Delete from S3 if key exists
-            if (s3Key) {
+            // Delete from storage if key exists
+            if (storageKey) {
                 try {
-                    const deleteCommand = new DeleteObjectCommand({
-                        Bucket: BUCKET_NAME,
-                        Key: s3Key
-                    });
-                    
-                    await s3Client.send(deleteCommand);
-                    console.log(`Report deleted from S3: ${s3Key}`);
-                } catch (s3Error) {
-                    console.error('Error deleting report from S3:', s3Error);
-                    // Continue with database deletion even if S3 deletion fails
+                    // Get the appropriate provider for this file
+                    const provider = StorageFactory.getProviderForFile(report.file_path) || this.storageProvider;
+                    await provider.deleteFile(storageKey);
+                    console.log(`Report deleted from ${provider.getProviderName()}: ${storageKey}`);
+                } catch (storageError) {
+                    console.error(`Error deleting report from storage:`, storageError);
+                    // Continue with database deletion even if storage deletion fails
                 }
             }
             
